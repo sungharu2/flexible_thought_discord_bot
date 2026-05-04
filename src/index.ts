@@ -2,7 +2,7 @@ import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputC
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-//import { deployCommands } from "./deploy-commands";
+import { deployCommands } from "./deploy-commands";
 
 // .env 파일 로드
 config();
@@ -10,10 +10,9 @@ config();
 // 클라이언트 인스턴스 생성
 const client = new Client({
     intents: [
-        GatewayIntentBits.GuildModeration
-        // GatewayIntentBits.Guilds,
-        // GatewayIntentBits.GuildMessages,
-        // GatewayIntentBits.MessageContent,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
     ],
 });
 
@@ -100,13 +99,13 @@ client.once(Events.ClientReady, () => {
     console.log(`봇이 ${client.guilds.cache.size}개의 서버에서 실행 중`);
 
 
-    // for (const guild of client.guilds.cache.values()) {
-    //     try {
-    //         deployCommands();
-    //     } catch (error) {
-    //         console.error(`${guild.name}(${guild.id}) 서버에서 명령어 배포 실패:`, error);
-    //     }
-    // }
+    for (const guild of client.guilds.cache.values()) {
+        try {
+            deployCommands();
+        } catch (error) {
+            console.error(`${guild.name}(${guild.id}) 서버에서 명령어 배포 실패:`, error);
+        }
+    }
 
     // 봇 상태 설정
     client.user?.setPresence({
