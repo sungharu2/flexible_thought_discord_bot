@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { deployCommands } from "./deploy-commands";
+import { initChannels } from './init-channels';
 
 // .env 파일 로드
 config();
@@ -102,6 +103,8 @@ client.once(Events.ClientReady, () => {
     for (const guild of client.guilds.cache.values()) {
         try {
             deployCommands();
+            // bot-두뇌강화 채널 init 설정
+            initChannels(guild, client.user?.displayAvatarURL());
         } catch (error) {
             console.error(`${guild.name}(${guild.id}) 서버에서 명령어 배포 실패:`, error);
         }
