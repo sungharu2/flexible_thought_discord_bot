@@ -69,6 +69,36 @@ client.on(Events.InteractionCreate, async interaction => {
         return;
     }
 
+    const channel = interaction.channel
+    // 'help'를 제외한 명령어는 bot-#### 채널에서만 실행되도록
+    if (channel != null) {
+        let channelName = ''
+        try {
+            interface TempChannel {
+                name: string;
+            }
+            channelName = (channel.toJSON() as TempChannel).name
+            //console.log(channelName)
+        }
+        catch (error) {
+            console.error("Invalid JSON format", error);
+        }
+        if (command.data.name != 'help' && !channelName.includes('bot-')) {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                    ephemeral: true
+                });
+            } else {
+                await interaction.reply({
+                    content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                    ephemeral: true
+                });
+            }
+            return;
+        }
+    }
+
     try {
         await command.execute(interaction);
     } catch (error) {

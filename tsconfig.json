@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
         "target": "es2020",
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "commonjs", // nodenext로 하니 버그 발생
+        "moduleResolution": "node", // nodenext로 하니 버그 발생
         "esModuleInterop": true,
         "outDir": "./dist",
         "rootDir": "./src",

@@ -17,7 +17,6 @@ export async function initChannels(guild: Guild, avatarURL?: string) {
 
         // 이미 채널이 있는지 체크
         if (channel[1].name == `bot-두뇌강화`) {
-            console.log(`matched`);
             theChannel = channel[1]
             isChannelExists = true;
         }
