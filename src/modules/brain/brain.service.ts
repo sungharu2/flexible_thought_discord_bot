@@ -1,4 +1,5 @@
 import { initBrainPotential } from '../../brain_upgrade/upgrade.potential';
+import { insertNewLog } from '../log/log.service';
 import { findBrainById, insertBrainIfNotExists, updatePotential } from './brain.repository';
 import { Brain } from './brain.types';
 
@@ -24,7 +25,12 @@ export async function insertNewBrain(userId: string): Promise<boolean> {
     return await insertBrainIfNotExists(userId, potential);
 };
 
-export async function changePotential(userId: string, newPotential: string): Promise<boolean> {
+export async function changePotential(userId: string, oldPotential: string, newPotential: string): Promise<boolean> {
+    const result = await updatePotential(userId, newPotential);
+    
+    // DB 로그 저장
+    // TODO: 잠재능력 메모리얼 기능 구현에 따른 로그 수정
+    insertNewLog(userId, '4', oldPotential, newPotential);
 
-    return await updatePotential(userId, newPotential);
+    return result
 };

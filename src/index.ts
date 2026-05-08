@@ -141,13 +141,12 @@ client.on(Events.InteractionCreate, async interaction => {
             const isPromoted = potential.split('_')[0] != newPotential.split('_')[0];
             
             // DB 결과 저장
-            changePotential(userId, newPotential);
-            // DB 로그 저장
+            changePotential(userId, potential, newPotential);
 
             const embed = new EmbedBuilder()
             .setColor(getColorByPotential(newPotential))
             .setTitle('🔍 잠재능력 정보')
-            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★' : '잠재능력을 재설정할 수 있습니다.')
+            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★' : '잠재능력 재설정 완료!')
             .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,
