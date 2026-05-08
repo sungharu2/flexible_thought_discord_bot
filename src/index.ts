@@ -5,9 +5,10 @@ import path from 'path';
 import { deployCommands } from "./deploy-commands";
 import { initChannels } from './init-channels';
 import { getUser, insertNewUser } from './modules/user/user.service';
-import { changePotential, getBrain, insertNewBrain } from './modules/brain/brain.service';
+import { changeNeuron, changePotential, getBrain, insertNewBrain } from './modules/brain/brain.service';
 import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
 import { getColorByPotential } from './commands/brain';
+import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron';
 
 // .env 파일 로드
 config();
@@ -128,12 +129,56 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     // 버튼 상호작용
     if (interaction.isButton()) {
+        // 뉴런 강화
+        if (interaction.customId === 'upgrade_neuron') {
+            const userId = interaction.user.id;
+            const brain = await getBrain(userId);
+            if (!brain)  {
+                console.warn("뉴런 강화 오류 발생");
+                return;
+            }
+
+            const potential = brain.brPotential;
+            const neuronLv = brain.brNeuronLv;
+            const newNeuronLv = upgradeNeuron(neuronLv);
+            const isSuccess = neuronLv + 1 == newNeuronLv;
+            const isDestroyed = neuronLv > 20 && newNeuronLv == 20;
+            
+            // DB 결과 저장
+            changeNeuron(userId, neuronLv, newNeuronLv);
+
+            const embed = new EmbedBuilder()
+            .setColor(getColorByPotential(potential))
+            .setTitle('🔍 뉴런 정보')
+            .setDescription(isSuccess ? '뉴런 강화 성공!\n' : (isDestroyed ? '뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '뉴런 강화 실패...\n'))
+            .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+            .setFooter({
+                text: `요청자: ${interaction.user.tag}`,
+                iconURL: interaction.user.displayAvatarURL()
+            });
+    
+            embed.addFields(
+                { name: '뉴런', 
+                    value: printNeuronUI(newNeuronLv),
+                    inline: false 
+                }
+            );
+    
+            // 강화 버튼
+            const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success);
+            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+    
+            await interaction.update({ 
+                embeds: [embed], 
+                components: [rowButton],
+            });
+        }
         // 잠재능력 재설정
         if (interaction.customId === 'upgrade_potential') {
             const userId = interaction.user.id;
             const brain = await getBrain(userId);
             if (!brain)  {
-                console.warn("잠재능력 재설정 실패");
+                console.warn("잠재능력 재설정 오류 발생");
                 return;
             }
             const potential = brain.brPotential;
@@ -146,7 +191,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const embed = new EmbedBuilder()
             .setColor(getColorByPotential(newPotential))
             .setTitle('🔍 잠재능력 정보')
-            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★' : '잠재능력 재설정 완료!')
+            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n')
             .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,

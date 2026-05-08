@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, roleMention, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getBrain } from '../modules/brain/brain.service';
-import { printPotential, rerollPotential } from '../brain_upgrade/upgrade.potential';
+import { getPotentialData, printPotential, rerollPotential } from '../brain_upgrade/upgrade.potential';
+import { getNeuronDataByLv, printNeuronUI, upgradeNeuron } from '../brain_upgrade/upgrade.neuron';
+import { Brain } from '../modules/brain/brain.types';
 
 export const data = new SlashCommandBuilder()
     .setName('두뇌')
@@ -17,8 +19,8 @@ export const data = new SlashCommandBuilder()
     )
     .addSubcommand((subcommand) =>
         subcommand
-            .setName('지능')
-            .setDescription('두뇌의 지능 스탯을 강화합니다.')
+            .setName('뉴런')
+            .setDescription('뉴런의 지능 스탯을 강화합니다.')
     )
     .addSubcommand((subcommand) =>
         subcommand
@@ -47,7 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     const level = brain.brLv;
-    const int = brain.brInt;
+    const neuronLv = brain.brNeuronLv;
     const potential = brain.brPotential;
 
 
@@ -64,8 +66,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
         embed.addFields(
             { name: '레벨', value: level.toString(), inline: false },
-            { name: '전투력', value: '1', inline: false },
-            { name: '지능', value: int.toString(), inline: false },
+            { name: 'IQ', value: getIq(brain), inline: false },
+            { name: '뉴런', value: '**★ ' + neuronLv + '성**', inline: false },
             { name: '잠재능력', 
                 value: printPotential(potential),
                 inline: false 
@@ -77,14 +79,39 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (subcommand == '레벨') {
 
     }
-    if (subcommand == '지능') {
+    if (subcommand == '뉴런') {
+        const embed = new EmbedBuilder()
+        .setColor(getColorByPotential(potential))
+        .setTitle('🔍 뉴런 정보')
+        //.setDescription('뉴런을 강화할 수 있습니다.\n')
+        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
 
+        embed.addFields(
+            { name: '뉴런', 
+                value: printNeuronUI(neuronLv),
+                inline: false 
+            }
+        );
+
+        // 강화 버튼
+        const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success);
+        const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+
+        await interaction.reply({ 
+            embeds: [embed], 
+            components: [rowButton],
+            withResponse: true,
+        });
     }
     if (subcommand == '잠재능력') {
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
         .setTitle('🔍 잠재능력 정보')
-        .setDescription('잠재능력을 재설정할 수 있습니다.')
+        .setDescription('잠재능력을 재설정할 수 있습니다.\n')
         .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
         .setFooter({
             text: `요청자: ${interaction.user.tag}`,
@@ -131,4 +158,21 @@ export function getColorByPotential(potential: string): number {
         return 0x00ff00
     }
     return 0xffffff;
+}
+
+function getIq(brain: Brain): string {
+    const neuronLv = brain.brNeuronLv;
+    const potential = brain.brPotential;
+
+    const neuronData = getNeuronDataByLv(neuronLv);
+    const potentialData = getPotentialData(potential);
+
+    const baseInt = brain.brLv;
+    const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat;
+    const totalMultStat = neuronData.multStat + potentialData.multStat;
+
+    console.log('totalAddedInt: ' + totalAddedInt);
+    console.log('totalMultStat: ' + totalMultStat + '%');
+
+    return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
 }

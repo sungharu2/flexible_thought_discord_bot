@@ -3,7 +3,7 @@ export type BrainRow = {
     dt_created: Date;
     dt_modified: Date;
     br_lv: number;
-    br_int: number;
+    br_neuron_lv: number;
     br_potential: string;
  };
   
@@ -12,6 +12,6 @@ export type Brain = {
     dtCreated: Date;
     dtModified: Date;
     brLv: number;
-    brInt: number;
+    brNeuronLv: number;
     brPotential: string;
 }

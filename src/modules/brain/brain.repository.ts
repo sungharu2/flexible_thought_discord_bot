@@ -32,7 +32,7 @@ export async function insertBrainIfNotExists(userId: string, potential: string):
         'dt_created': new Date(),
         'dt_modified': new Date(),
         'br_lv': 1,
-        'br_int': 1,
+        'br_neuron_lv': 0,
         'br_potential': potential,
     };
 
@@ -41,6 +41,22 @@ export async function insertBrainIfNotExists(userId: string, potential: string):
         [newBrain]
     ) as unknown as ResultSetHeader;
 
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+export async function updateNeuron(userId: string, neuronLv: number): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_neuron_lv = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), neuronLv, userId]
+    ) as unknown as ResultSetHeader;
+    
     //console.log(result);
     return result.affectedRows > 0;
 }
