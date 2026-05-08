@@ -1,0 +1,17 @@
+export type BrainRow = {
+    discord_user_id: string;
+    dt_created: Date;
+    dt_modified: Date;
+    br_lv: number;
+    br_int: number;
+    br_potential: string;
+ };
+  
+export type Brain = {
+    discordUserId: string;
+    dtCreated: Date;
+    dtModified: Date;
+    brLv: number;
+    brInt: number;
+    brPotential: string;
+}

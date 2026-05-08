@@ -1,9 +1,13 @@
-import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputCommandInteraction } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js';
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { deployCommands } from "./deploy-commands";
 import { initChannels } from './init-channels';
+import { getUser, insertNewUser } from './modules/user/user.service';
+import { changePotential, getBrain, insertNewBrain } from './modules/brain/brain.service';
+import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
+import { getColorByPotential } from './commands/brain';
 
 // .env 파일 로드
 config();
@@ -60,59 +64,110 @@ for (const file of eventFiles) {
 // 상호작용 이벤트 처리
 client.on(Events.InteractionCreate, async interaction => {
     console.log(`상호작용 발생: ${interaction.user.tag} (${interaction.user.id})`);
-    if (!interaction.isChatInputCommand()) return;
+    // 채팅 명령어 상호작용
+    if (interaction.isChatInputCommand()) {
+        // 신규 유저 정보 추가
+        const userId = interaction.user.id;
+        insertNewUser(userId);
+        insertNewBrain(userId);
 
-    const command = commands.get(interaction.commandName);
+        const command = commands.get(interaction.commandName);
 
-    if (!command) {
-        console.error(`${interaction.commandName} 명령어를 찾을 수 없습니다.`);
-        return;
-    }
+        if (!command) {
+            console.error(`${interaction.commandName} 명령어를 찾을 수 없습니다.`);
+            return;
+        }
 
-    const channel = interaction.channel
-    // 'help'를 제외한 명령어는 bot-#### 채널에서만 실행되도록
-    if (channel != null) {
-        let channelName = ''
-        try {
-            interface TempChannel {
-                name: string;
+        const channel = interaction.channel
+        // 'help'를 제외한 명령어는 bot-#### 채널에서만 실행되도록
+        if (channel != null) {
+            let channelName = ''
+            try {
+                interface TempChannel {
+                    name: string;
+                }
+                channelName = (channel.toJSON() as TempChannel).name
+                //console.log(channelName)
             }
-            channelName = (channel.toJSON() as TempChannel).name
-            //console.log(channelName)
+            catch (error) {
+                console.error("Invalid JSON format", error);
+            }
+            if (command.data.name != 'help' && !channelName.includes('bot-')) {
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({
+                        content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                        ephemeral: true
+                    });
+                } else {
+                    await interaction.reply({
+                        content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                        ephemeral: true
+                    });
+                }
+                return;
+            }
         }
-        catch (error) {
-            console.error("Invalid JSON format", error);
-        }
-        if (command.data.name != 'help' && !channelName.includes('bot-')) {
+
+        try {
+            await command.execute(interaction);
+        } catch (error) {
+            console.error(`명령어 실행 중 오류 발생:`, error);
+
             if (interaction.replied || interaction.deferred) {
                 await interaction.followUp({
-                    content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                    content: '명령어 실행 중 오류가 발생했습니다! 에러코드: 400',
                     ephemeral: true
                 });
             } else {
                 await interaction.reply({
-                    content: `/help 명령어를 제외한 명령어는 'bot-####' 봇 전용 채널에서만 사용 가능합니다. 전용 채널에서 명령어를 호출해 주세요.`,
+                    content: '명령어 실행 중 오류가 발생했습니다! 에러코드: 400',
                     ephemeral: true
                 });
             }
-            return;
         }
     }
+    // 버튼 상호작용
+    if (interaction.isButton()) {
+        // 잠재능력 재설정
+        if (interaction.customId === 'upgrade_potential') {
+            const userId = interaction.user.id;
+            const brain = await getBrain(userId);
+            if (!brain)  {
+                console.warn("잠재능력 재설정 실패");
+                return;
+            }
+            const potential = brain.brPotential;
+            const newPotential = rerollPotential(potential);
+            const isPromoted = potential.split('_')[0] != newPotential.split('_')[0];
+            
+            // DB 결과 저장
+            changePotential(userId, newPotential);
+            // DB 로그 저장
 
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`명령어 실행 중 오류 발생:`, error);
-
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({
-                content: '명령어 실행 중 오류가 발생했습니다!',
-                ephemeral: true
+            const embed = new EmbedBuilder()
+            .setColor(getColorByPotential(newPotential))
+            .setTitle('🔍 잠재능력 정보')
+            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★' : '잠재능력을 재설정할 수 있습니다.')
+            .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+            .setFooter({
+                text: `요청자: ${interaction.user.tag}`,
+                iconURL: interaction.user.displayAvatarURL()
             });
-        } else {
-            await interaction.reply({
-                content: '명령어 실행 중 오류가 발생했습니다!',
-                ephemeral: true
+    
+            embed.addFields(
+                { name: '잠재능력', 
+                    value: printPotential(newPotential),
+                    inline: false 
+                }
+            );
+    
+            // 강화 버튼
+            const upgrade = new ButtonBuilder().setCustomId('upgrade_potential').setLabel('재설정!').setStyle(ButtonStyle.Success);
+            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+    
+            await interaction.update({ 
+                embeds: [embed], 
+                components: [rowButton],
             });
         }
     }

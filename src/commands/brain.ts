@@ -1,0 +1,134 @@
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, roleMention, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getBrain } from '../modules/brain/brain.service';
+import { printPotential, rerollPotential } from '../brain_upgrade/upgrade.potential';
+
+export const data = new SlashCommandBuilder()
+    .setName('두뇌')
+    .setDescription('두뇌 정보를 확인하고 강화합니다.')
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName('정보-조회')
+            .setDescription('나의 두뇌 정보를 확인합니다.')
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName('레벨')
+            .setDescription('나의 두뇌 레벨을 강화합니다.')
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName('지능')
+            .setDescription('두뇌의 지능 스탯을 강화합니다.')
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName('잠재능력')
+            .setDescription('두뇌의 잠재능력을 재설정합니다.')
+    )
+
+export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
+    const subcommand = interaction.options.getSubcommand();
+
+    const userId = interaction.user.id;
+    const brain = await getBrain(userId);
+
+    if (!brain) {
+        const embed = new EmbedBuilder()
+        .setColor(0xffda00)
+        .setTitle('🔍 봇 오류 발생')
+        .setDescription('명령어 실행 중 오류가 발생했습니다! 에러코드: 203')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
+
+        await interaction.reply({ embeds: [embed] });
+        return;
+    }
+
+    const level = brain.brLv;
+    const int = brain.brInt;
+    const potential = brain.brPotential;
+
+
+    if (subcommand == '정보-조회') {
+        const embed = new EmbedBuilder()
+        .setColor(getColorByPotential(potential))
+        .setTitle('🔍 두뇌 정보')
+        .setDescription('이것이 당신의 두뇌입니다.')
+        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
+
+        embed.addFields(
+            { name: '레벨', value: level.toString(), inline: false },
+            { name: '전투력', value: '1', inline: false },
+            { name: '지능', value: int.toString(), inline: false },
+            { name: '잠재능력', 
+                value: printPotential(potential),
+                inline: false 
+            }
+        );
+        await interaction.reply({ embeds: [embed] });
+
+    }
+    if (subcommand == '레벨') {
+
+    }
+    if (subcommand == '지능') {
+
+    }
+    if (subcommand == '잠재능력') {
+        const embed = new EmbedBuilder()
+        .setColor(getColorByPotential(potential))
+        .setTitle('🔍 잠재능력 정보')
+        .setDescription('잠재능력을 재설정할 수 있습니다.')
+        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
+
+        embed.addFields(
+            { name: '잠재능력', 
+                value: printPotential(potential),
+                inline: false 
+            }
+        );
+
+        // 강화 버튼
+        const upgrade = new ButtonBuilder().setCustomId('upgrade_potential').setLabel('재설정!').setStyle(ButtonStyle.Success);
+        const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+
+        await interaction.reply({ 
+            embeds: [embed], 
+            components: [rowButton],
+            withResponse: true,
+        });
+    }
+
+}
+
+export function getColorByPotential(potential: string): number {
+    const potentialType = potential.split('_')[0];
+
+    // 레어
+    if (potentialType == '1') {
+        return 0x0099FF
+    }
+    // 에픽
+    if (potentialType == '2') {
+        return 0x4c00b0
+    }
+    // 유니크
+    if (potentialType == '3') {
+        return 0xffda03
+    }
+    // 레전드리
+    if (potentialType == '4') {
+        return 0x00ff00
+    }
+    return 0xffffff;
+}
