@@ -5,11 +5,12 @@ import path from 'path';
 import { deployCommands } from "./deploy-commands";
 import { initChannels } from './init-channels';
 import { getUser, insertNewUser } from './modules/user/user.service';
-import { changeNeuron, changePotential, getBrain, insertNewBrain } from './modules/brain/brain.service';
+import { changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service';
 import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
 import { getColorByPotential } from './commands/brain';
 import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron';
 import { insertNewUserMap } from './modules/user_server_map/usermap.service';
+import nodeCron from 'node-cron';
 
 // .env 파일 로드
 config();
@@ -136,6 +137,58 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     // 버튼 상호작용
     if (interaction.isButton()) {
+        // 진화
+        if (interaction.customId === 'brain_evolve') {
+            const userId = interaction.user.id;
+            let brain = await getBrain(userId);
+            if (!brain)  {
+                console.warn("진화 처리 중 오류 발생");
+                return;
+            }
+
+            const potential = brain.brPotential;
+            const level = brain.brLv;
+            
+            // 진화
+            if (!brain.brEvolved) {
+                await evolveBrain(userId, level);
+                const newBrain = await getBrain(userId);
+                if (newBrain) {
+                    brain = newBrain;
+                }
+            }
+
+            const embed = new EmbedBuilder()
+            .setColor(getColorByPotential(potential))
+            .setTitle('🧠 레벨 정보')
+            .setDescription('오늘 진화를 완료했습니다!\n')
+            .setThumbnail(interaction.user?.displayAvatarURL() || '')
+    
+            embed.addFields(
+                { name: '레벨', 
+                    value: 'Lv. ' + brain.brLv,
+                    inline: false 
+                },
+                { name: '시냅스', 
+                    value: '1000 / 1000',
+                    inline: false 
+                },
+            );
+            
+            // 진화 버튼
+            const isEvolved = brain.brEvolved;
+            const upgrade = new ButtonBuilder()
+                .setCustomId('brain_evolve')
+                .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(isEvolved);
+            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+    
+            await interaction.update({ 
+                embeds: [embed], 
+                components: [rowButton],
+            });
+        }
         // 뉴런 강화
         if (interaction.customId === 'upgrade_neuron') {
             const userId = interaction.user.id;
@@ -257,6 +310,12 @@ client.once(Events.ClientReady, () => {
 process.on('unhandledRejection', (error) => {
     console.error('처리되지 않은 Promise 거부:', error);
 });
+
+// 매일 00시 진화 가능 여부 초기화
+nodeCron.schedule('0 0 * * *', function() {
+    resetIsEvolvedFalse();
+    console.log('crontab schedule: reset isEvolved complete.');
+})
 
 // commands 컬렉션 내보내기 (다른 파일에서 명령어 목록에 접근할 수 있도록)
 export { commands };

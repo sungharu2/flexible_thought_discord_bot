@@ -25,7 +25,8 @@
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
     "embed-table": "^4.2.3",
-    "mysql2": "^3.22.3"
+    "mysql2": "^3.22.3",
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

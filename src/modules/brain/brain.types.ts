@@ -6,7 +6,9 @@ export type BrainRow = {
     br_neuron_lv: number;
     br_potential: string;
     br_iq: string;
- };
+    br_synapse: number;
+    br_evolved: number;
+};
   
 export type Brain = {
     discordUserId: string;
@@ -16,4 +18,6 @@ export type Brain = {
     brNeuronLv: number;
     brPotential: string;
     brIq: string;
-}
+    brSynapse: number;
+    brEvolved: boolean;
+};

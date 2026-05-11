@@ -86,6 +86,22 @@ export async function insertBrainIfNotExists(userId: string, potential: string, 
     return result.affectedRows > 0;
 }
 
+export async function updateLevel(userId: string, level: number): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_lv = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), level, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
 export async function updateNeuron(userId: string, neuronLv: number): Promise<boolean> {
     const result = await query(
         `
@@ -128,6 +144,40 @@ export async function updateIq(userId: string, iq: string): Promise<boolean> {
         WHERE discord_user_id = ?
         `,
         [new Date(), iq, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+export async function updateEvolveBrain(userId: string): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_synapse = ?,
+            br_evolved = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), 1000, true, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+
+export async function updateAllIsEvolvedFalse(): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_evolved = ?
+        WHERE 1 = 1
+        `,
+        [new Date(), false]
     ) as unknown as ResultSetHeader;
     
     //console.log(result);

@@ -49,6 +49,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     }
 
     const level = brain.brLv;
+    const synapse = brain.brSynapse;
     const neuronLv = brain.brNeuronLv;
     const potential = brain.brPotential;
 
@@ -58,16 +59,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (subcommand == '정보-조회') {
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
-        .setTitle('🔍 두뇌 정보')
+        .setTitle('🧠 두뇌 정보')
         .setDescription('이것이 당신의 두뇌입니다.')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
-        .setFooter({
-            text: `요청자: ${interaction.user.tag}`,
-            iconURL: interaction.user.displayAvatarURL()
-        });
 
         embed.addFields(
-            { name: '레벨', value: level.toString(), inline: false },
+            { name: '레벨', value: 'Lv. ' + level, inline: false },
             { name: 'IQ', value: getIq(brain), inline: false },
             { name: '뉴런', value: '**★ ' + neuronLv + '성**', inline: false },
             { name: '잠재능력', 
@@ -79,18 +76,44 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
     }
     if (subcommand == '레벨') {
+        const embed = new EmbedBuilder()
+        .setColor(getColorByPotential(potential))
+        .setTitle('🧠 레벨 정보')
+        //.setDescription('뉴런을 강화할 수 있습니다.\n')
+        .setThumbnail(interaction.user?.displayAvatarURL() || '')
 
+        embed.addFields(
+            { name: '레벨', 
+                value: 'Lv. ' + level,
+                inline: false 
+            },
+            { name: '시냅스', 
+                value: synapse + ' / 1000',
+                inline: false 
+            },
+        );
+
+        // 진화 버튼
+        const isEvolved = brain.brEvolved;
+        const upgrade = new ButtonBuilder()
+            .setCustomId('brain_evolve')
+            .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
+            .setStyle(ButtonStyle.Success)
+            .setDisabled(isEvolved);
+        const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+
+        await interaction.reply({ 
+            embeds: [embed], 
+            components: [rowButton],
+            withResponse: true,
+        });
     }
     if (subcommand == '뉴런') {
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
-        .setTitle('🔍 뉴런 정보')
+        .setTitle('🧠 뉴런 정보')
         //.setDescription('뉴런을 강화할 수 있습니다.\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
-        .setFooter({
-            text: `요청자: ${interaction.user.tag}`,
-            iconURL: interaction.user.displayAvatarURL()
-        });
 
         embed.addFields(
             { name: '뉴런', 
@@ -112,13 +135,9 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     if (subcommand == '잠재능력') {
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
-        .setTitle('🔍 잠재능력 정보')
+        .setTitle('🧠 잠재능력 정보')
         .setDescription('잠재능력을 재설정할 수 있습니다.\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
-        .setFooter({
-            text: `요청자: ${interaction.user.tag}`,
-            iconURL: interaction.user.displayAvatarURL()
-        });
 
         embed.addFields(
             { name: '잠재능력', 
