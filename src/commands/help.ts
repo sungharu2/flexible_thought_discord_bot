@@ -8,7 +8,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const embed = new EmbedBuilder()
         .setColor(0x0099FF)
         .setTitle('📌 도움말')
-        .setDescription('⏱️ 버전: v0.1 / 마지막 수정일: 2026-05-11')
+        .setDescription('⏱️ 버전: v0.2 / 마지막 수정일: 2026-05-12')
         .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
         .setTimestamp()
         .setFooter({
