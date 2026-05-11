@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { getBrainTop10ByIq, getBrainTop10ByLevel, getBrainTop10ByNeuron } from '../modules/brain/brain.service';
+import { getBrainTop10ByIq, getBrainTop10ByLevel, getBrainTop10ByNeuron } from '../modules/brain/brain.service.js';
 import { Table } from 'embed-table';
 
 

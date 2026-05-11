@@ -1,8 +1,8 @@
-import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron';
-import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential';
-import { insertNewLog } from '../log/log.service';
-import { decreaseSynapse, findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLevel, updateNeuron, updatePotential } from './brain.repository';
-import { Brain, BrainRow } from './brain.types';
+import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron.js';
+import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential.js';
+import { insertNewLog } from '../log/log.service.js';
+import { decreaseSynapse, findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLevel, updateNeuron, updatePotential } from './brain.repository.js';
+import type { Brain, BrainRow } from './brain.types.js';
 import crypto from 'crypto';
 
 function toBrain(row: BrainRow): Brain {

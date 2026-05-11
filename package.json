@@ -1,11 +1,12 @@
 {
   "name": "flexible_thought_discord_bot",
-  "version": "1.0.0",
+  "version": "0.3",
   "description": "유연한 사고 디스코드 봇 개인 프로젝트",
   "main": "index.js",
   "scripts": {
-    "pm2:start": "nodemon --exec ts-node src/index.ts",
-    "dev": "nodemon --exec ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "pm2:start": "nodemon --exec ts-node src/index.js",
+    "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsc",
     "deploy": "ts-node src/deploy-commands.ts"
   },
@@ -16,7 +17,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/sungharu2/flexible_thought_discord_bot/issues"
   },
@@ -26,7 +27,8 @@
     "dotenv": "^17.4.2",
     "embed-table": "^4.2.3",
     "mysql2": "^3.22.3",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

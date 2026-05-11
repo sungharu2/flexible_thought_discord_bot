@@ -1,5 +1,5 @@
-import { findUserMapsById, insertUserMapIfNotExist } from './usermap.repository';
-import { UserMap, UserMapRow } from './usermap.types';
+import { findUserMapsById, insertUserMapIfNotExist } from './usermap.repository.js';
+import type { UserMap, UserMapRow } from './usermap.types.js';
 
 function toUserMap(row: UserMapRow) : UserMap {
     return {

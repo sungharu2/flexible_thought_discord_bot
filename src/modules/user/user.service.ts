@@ -1,5 +1,5 @@
-import { findUserById, insertUserIfNotExists } from './user.repository';
-import { User } from './user.types';
+import { findUserById, insertUserIfNotExists } from './user.repository.js';
+import type { User } from './user.types.js';
 
 
 export async function getUser(userId: string): Promise<User | null> {

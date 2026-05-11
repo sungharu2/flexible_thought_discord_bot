@@ -1,8 +1,8 @@
 import { ChannelType, EmbedBuilder } from 'discord.js';
 import { Guild } from 'discord.js';
 import { config } from 'dotenv';
-import { addHelpEmbed } from './commands/help';
-import { version } from './version';
+import { addHelpEmbed } from './commands/help.js';
+import { version } from './version.js';
 
 // .env 파일 로드
 config();

@@ -1,5 +1,5 @@
-import mysql, { RowDataPacket } from 'mysql2';
-import { UserRow } from './user.types';
+import mysql from 'mysql2';
+import type { UserRow } from './user.types.js';
 
 const pool = mysql.createPool({
     host: 'localhost',

@@ -1,5 +1,6 @@
-import mysql, { ResultSetHeader } from 'mysql2';
-import { Brain, BrainRow } from './brain.types';
+import mysql from 'mysql2';
+import type { ResultSetHeader } from 'mysql2';
+import type { BrainRow } from './brain.types.js';
 
 const pool = mysql.createPool({
     host: 'localhost',

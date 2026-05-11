@@ -1,16 +1,19 @@
-import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ModalBuilder, LabelBuilder, TextChannel } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Events, ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ModalBuilder, LabelBuilder, TextChannel } from 'discord.js';
+import type { ClientEvents } from 'discord.js';
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-import { deployCommands } from "./deploy-commands";
-import { initChannels } from './init-channels';
-import { getUser, insertNewUser } from './modules/user/user.service';
-import { changeIq, changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service';
-import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
-import { getColorByPotential } from './commands/brain';
-import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron';
-import { insertNewUserMap } from './modules/user_server_map/usermap.service';
+import { deployCommands } from "./deploy-commands.js";
+import { initChannels } from './init-channels.js';
+import { insertNewUser } from './modules/user/user.service.js';
+import { changeIq, changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service.js';
+import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential.js';
+import { getColorByPotential } from './commands/brain.js';
+import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron.js';
+import { insertNewUserMap } from './modules/user_server_map/usermap.service.js';
 import nodeCron from 'node-cron';
+
+import { fileURLToPath, pathToFileURL } from 'url';
 
 // .env 파일 로드
 config();
@@ -34,35 +37,46 @@ interface Command {
 // 명령어를 저장할 컬렉션
 const commands = new Collection<string, Command>();
 
-// 명령어 파일 로드
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// 명령어 폴더
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+
+// dist 기준이면 .js 권장
+const commandFiles = fs
+    .readdirSync(commandsPath)
+    .filter(file => file.endsWith('.js') || file.endsWith('.ts') );
 
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    import(filePath).then((command) => {
-        if ('data' in command && 'execute' in command) {
-            commands.set(command.data.name, command);
-        } else {
-            console.warn(`${filePath} 명령어에 필요한 "data" 또는 "execute" 속성이 없습니다.`);
-        }
-    });
+
+    // Windows ESM 대응
+    const fileUrl = pathToFileURL(filePath).href;
+    const command = await import(fileUrl);
+
+    if ('data' in command && 'execute' in command) {
+        commands.set(command.data.name, command);
+    } else {
+        console.warn(
+        `${filePath} 명령어에 필요한 "data" 또는 "execute" 속성이 없습니다.`
+        );
+    }
 }
 
 // 이벤트 파일 로드
-const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.ts'));
+// const eventsPath = pathToFileURL(path.resolve('../events')).href;
+// const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
-for (const file of eventFiles) {
-    const filePath = path.join(eventsPath, file);
-    import(filePath).then((event) => {
-        if (event.once) {
-            client.once(event.name as keyof ClientEvents, (...args) => event.execute(...args));
-        } else {
-            client.on(event.name as keyof ClientEvents, (...args) => event.execute(...args));
-        }
-    });
-}
+// for (const file of eventFiles) {
+//     const filePath = file;
+//     import(filePath).then((event) => {
+//         if (event.once) {
+//             client.once(event.name as keyof ClientEvents, (...args) => event.execute(...args));
+//         } else {
+//             client.on(event.name as keyof ClientEvents, (...args) => event.execute(...args));
+//         }
+//     });
+// }
 
 // 상호작용 이벤트 처리
 client.on(Events.InteractionCreate, async interaction => {

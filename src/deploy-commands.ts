@@ -3,6 +3,10 @@ import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 
+import { fileURLToPath, pathToFileURL } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+
 // .env 파일 로드
 config();
 
@@ -16,20 +20,31 @@ export async function deployCommands(options: { guildId?: string; global?: boole
     const { guildId, global = true } = options;
 
     const commands = [];
-    const commandsPath = path.join(__dirname, 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.ts'));
+    // 명령어를 저장할 컬렉션
 
-    // 명령어 로드
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    // 명령어 폴더
+    const commandsPath = path.join(__dirname, 'commands');
+
+    // dist 기준이면 .js 권장
+    const commandFiles = fs
+        .readdirSync(commandsPath)
+        .filter(file => file.endsWith('.js') || file.endsWith('.ts'));
+
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
-        const command = await import(filePath);
+
+        // Windows ESM 대응
+        const fileUrl = pathToFileURL(filePath).href;
+        const command = await import(fileUrl);
 
         if ('data' in command && 'execute' in command) {
             commands.push(command.data.toJSON());
         } else {
             console.warn(`${filePath} 명령어에 필요한 "data" 또는 "execute" 속성이 없습니다.`);
         }
-    }
+    }    
 
     // REST API 인스턴스 생성
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || '');
@@ -54,9 +69,12 @@ export async function deployCommands(options: { guildId?: string; global?: boole
 }
 
 // 직접 실행될 때 자동으로 명령어 배포 실행
-if (require.main === module) {
-    deployCommands().catch(error => {
-        console.error('명령어 배포 실패:', error);
-        process.exit(1);
-    });
+if (process.argv[1] === __filename) {
+
+  deployCommands().catch(error => {
+
+    console.error('명령어 배포 실패:', error);
+
+    process.exit(1);
+  });
 }

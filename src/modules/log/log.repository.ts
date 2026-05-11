@@ -1,5 +1,6 @@
-import mysql, { ResultSetHeader } from 'mysql2';
-import { Log, LogRow } from './log.types';
+import mysql from 'mysql2';
+import type { ResultSetHeader } from 'mysql2';
+import type { LogRow } from './log.types.js';
 
 const pool = mysql.createPool({
     host: 'localhost',

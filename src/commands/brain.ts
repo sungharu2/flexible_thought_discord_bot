@@ -1,8 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, roleMention, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { changeIq, getBrain, getIq } from '../modules/brain/brain.service';
-import { getPotentialData, printPotential, rerollPotential } from '../brain_upgrade/upgrade.potential';
-import { getNeuronDataByLv, printNeuronUI, upgradeNeuron } from '../brain_upgrade/upgrade.neuron';
-import { Brain } from '../modules/brain/brain.types';
+import { changeIq, getBrain, getIq } from '../modules/brain/brain.service.js';
+import { printPotential } from '../brain_upgrade/upgrade.potential.js';
+import { printNeuronUI } from '../brain_upgrade/upgrade.neuron.js';
 
 export const data = new SlashCommandBuilder()
     .setName('두뇌')

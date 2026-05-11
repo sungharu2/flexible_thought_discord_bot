@@ -1,5 +1,5 @@
-import { findLogById, insertLog } from './log.repository';
-import { Log } from './log.types';
+import { findLogById, insertLog } from './log.repository.js';
+import type { Log } from './log.types.js';
 
 
 export async function getLog(userId: string): Promise<Log | null> {
