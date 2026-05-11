@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
     .addSubcommand((subcommand) =>
         subcommand
             .setName('레벨')
-            .setDescription('나의 두뇌 레벨을 강화합니다.')
+            .setDescription('진화하여 나의 두뇌 레벨을 강화하고 시냅스를 충전합니다.')
     )
     .addSubcommand((subcommand) =>
         subcommand
@@ -65,6 +65,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
         embed.addFields(
             { name: '레벨', value: 'Lv. ' + level, inline: false },
+            { name: '보유 시냅스', value: synapse + ' / 1000', inline: false },
             { name: 'IQ', value: getIq(brain), inline: false },
             { name: '뉴런', value: '**★ ' + neuronLv + '성**', inline: false },
             { name: '잠재능력', 
@@ -112,7 +113,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
         .setTitle('🧠 뉴런 정보')
-        //.setDescription('뉴런을 강화할 수 있습니다.\n')
+        .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
 
         embed.addFields(
@@ -136,7 +137,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
         .setTitle('🧠 잠재능력 정보')
-        .setDescription('잠재능력을 재설정할 수 있습니다.\n')
+        .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
 
         embed.addFields(

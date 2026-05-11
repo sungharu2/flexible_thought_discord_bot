@@ -1,7 +1,7 @@
 import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron';
 import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential';
 import { insertNewLog } from '../log/log.service';
-import { findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLevel, updateNeuron, updatePotential } from './brain.repository';
+import { decreaseSynapse, findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLevel, updateNeuron, updatePotential } from './brain.repository';
 import { Brain, BrainRow } from './brain.types';
 import crypto from 'crypto';
 
@@ -82,7 +82,11 @@ export async function increaseLevel(userId: string, oldLevel: number, increaseLe
 	return result
 };
 
-export async function changeNeuron(userId: string, oldNeuron: number, newNeuron: number): Promise<boolean> {
+export async function changeNeuron(userId: string, oldNeuron: number, newNeuron: number, curSynapse: number): Promise<boolean> {
+	// 시냅스 사용
+	const resultSynapse = await useSynapse(userId, curSynapse);
+	if (!resultSynapse) return false;
+
 	const result = await updateNeuron(userId, newNeuron);
 
 	// DB 로그 저장
@@ -91,7 +95,11 @@ export async function changeNeuron(userId: string, oldNeuron: number, newNeuron:
 	return result
 };
 
-export async function changePotential(userId: string, oldPotential: string, newPotential: string): Promise<boolean> {
+export async function changePotential(userId: string, oldPotential: string, newPotential: string, curSynapse: number): Promise<boolean> {
+	// 시냅스 사용
+	const resultSynapse = await useSynapse(userId, curSynapse);
+	if (!resultSynapse) return false;
+
 	const result = await updatePotential(userId, newPotential);
 
 	// DB 로그 저장
@@ -111,7 +119,6 @@ export async function evolveBrain(userId: string, oldLevel: number): Promise<boo
 	const resulty = await updateEvolveBrain(userId);
 
 	// DB 로그 저장
-	// TODO: 잠재능력 메모리얼 기능 구현에 따른 로그 수정
 	insertNewLog(userId, '1', 'false', 'true');
 
 	return resultx && resulty;
@@ -122,7 +129,6 @@ export async function resetIsEvolvedFalse(): Promise<boolean> {
 	const result = await updateAllIsEvolvedFalse();
 
 	// DB 로그 저장
-	// TODO: 잠재능력 메모리얼 기능 구현에 따른 로그 수정
 	insertNewLog('admin', '5', '*', 'false');
 
 	return result
@@ -132,6 +138,16 @@ export async function changeIq(brain: Brain): Promise<boolean> {
 	const iq = getIq(brain)
 
 	const result = await updateIq(brain.discordUserId, iq);
+
+	return result
+};
+
+export async function useSynapse(userId: string, curSynapse: number): Promise<boolean> {
+	if (curSynapse <= 0) {
+		return false;
+	}
+
+	const result = await decreaseSynapse(userId);
 
 	return result
 };

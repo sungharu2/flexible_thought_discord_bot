@@ -167,7 +167,6 @@ export async function updateEvolveBrain(userId: string): Promise<boolean> {
     return result.affectedRows > 0;
 }
 
-
 export async function updateAllIsEvolvedFalse(): Promise<boolean> {
     const result = await query(
         `
@@ -178,6 +177,22 @@ export async function updateAllIsEvolvedFalse(): Promise<boolean> {
         WHERE 1 = 1
         `,
         [new Date(), false]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+export async function decreaseSynapse(userId: string): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_synapse = br_synapse - 1
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), userId]
     ) as unknown as ResultSetHeader;
     
     //console.log(result);
