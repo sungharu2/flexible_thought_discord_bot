@@ -2,6 +2,7 @@ import { ChannelType, EmbedBuilder } from 'discord.js';
 import { Guild } from 'discord.js';
 import { config } from 'dotenv';
 import { addHelpEmbed } from './commands/help';
+import { version } from './version';
 
 // .env 파일 로드
 config();
@@ -34,7 +35,7 @@ export async function initChannels(guild: Guild, avatarURL?: string) {
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setTitle('📌 도움말')
-            .setDescription('⏱️ 버전: v0.1 / 마지막 수정일: 2026-05-11')
+            .setDescription('⏱️ 버전: ' + version.versionCode + ' / 마지막 수정일: ' + version.lastUpdateDate)
             .setThumbnail(avatarURL || '')
             .setTimestamp()
         addHelpEmbed(embed)

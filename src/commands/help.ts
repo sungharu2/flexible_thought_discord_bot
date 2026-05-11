@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { version } from '../version';
 
 export const data = new SlashCommandBuilder()
     .setName('help')
@@ -8,7 +9,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const embed = new EmbedBuilder()
         .setColor(0x0099FF)
         .setTitle('📌 도움말')
-        .setDescription('⏱️ 버전: v0.2 / 마지막 수정일: 2026-05-12')
+        .setDescription('⏱️ 버전: ' + version.versionCode + ' / 마지막 수정일: ' + version.lastUpdateDate)
         .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
         .setTimestamp()
         .setFooter({
@@ -38,6 +39,7 @@ export async function addHelpEmbed(embed: EmbedBuilder) {
             - ⚠️ 현재 INT 스탯만 유효한 옵션입니다.`,
             inline: false },
         { name: '확률 공지 링크', value: 'https://www.notion.so/v0-1-359b765c49f980bd8fcfea1dbc286d7b?source=copy_link', inline: false },
-        { name: '운영자 계좌', value: '**-> 토스뱅크 1000-1286-5583**\n후원 시 소정의 상품을 드립니다.', inline: false },
+        { name: '개발자', value: '<@' + version.developerUserId + '>', inline: false },
+        { name: '개발자 계좌', value: '**-> 토스뱅크 1000-1286-5583 최태현**\n후원 시 소정의 상품을 드립니다.', inline: false },
     );
 }
