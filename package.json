@@ -4,7 +4,7 @@
   "description": "유연한 사고 디스코드 봇 개인 프로젝트",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "pm2:start": "nodemon --exec ts-node src/index.ts",
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "deploy": "ts-node src/deploy-commands.ts"
