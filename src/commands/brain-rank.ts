@@ -55,7 +55,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
         const embed = new EmbedBuilder()
         .setColor(0x0099FF)
-        .setTitle('🔍 IQ 랭킹')
+        .setTitle('🏅 IQ 랭킹')
         .setDescription('서버 내 상위 10명만 출력됩니다.')
         .setThumbnail(top1user?.displayAvatarURL() || '')
         .setFooter({
@@ -93,7 +93,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
         const embed = new EmbedBuilder()
         .setColor(0x0099FF)
-        .setTitle('🔍 뉴런 랭킹')
+        .setTitle('🏅 뉴런 랭킹')
         .setDescription('서버 내 상위 10명만 출력됩니다.')
         .setThumbnail(top1user?.displayAvatarURL() || '')
         .setFooter({
@@ -131,7 +131,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
         const embed = new EmbedBuilder()
         .setColor(0x0099FF)
-        .setTitle('🔍 레벨 랭킹')
+        .setTitle('🏅 레벨 랭킹')
         .setDescription('서버 내 상위 10명만 출력됩니다.')
         .setThumbnail(top1user?.displayAvatarURL() || '')
         .setFooter({
