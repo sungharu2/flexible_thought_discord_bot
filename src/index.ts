@@ -137,88 +137,147 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     // 버튼 상호작용
     if (interaction.isButton()) {
-
-        // 타인의 메시지 상호작용 시
-        console.log('####interaction.customId: ' + interaction.customId);
-        if (!interaction.customId.includes(interaction.user.id)) {
-            return;
-        }
-
-        // 진화
-        if (interaction.customId.includes('brain_evolve')) {
-            const userId = interaction.user.id;
-            let brain = await getBrain(userId);
-            if (!brain)  {
-                console.warn("진화 처리 중 오류 발생");
+        // 버튼 상호작용 예외처리
+        try {
+            // 타인의 메시지 상호작용 시
+            //console.log('interaction.customId: ' + interaction.customId);
+            if (!interaction.customId.includes(interaction.user.id)) {
                 return;
             }
 
-            const potential = brain.brPotential;
-            const level = brain.brLv;
-            
             // 진화
-            if (!brain.brEvolved) {
-                await evolveBrain(userId, level);
+            if (interaction.customId.includes('brain_evolve')) {
+                const userId = interaction.user.id;
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("진화 처리 중 오류 발생");
+                    return;
+                }
+
+                const potential = brain.brPotential;
+                const level = brain.brLv;
+                
+                // 진화
+                if (!brain.brEvolved) {
+                    await evolveBrain(userId, level);
+                    const newBrain = await getBrain(userId);
+                    if (newBrain) {
+                        brain = newBrain;
+                    }
+                }
+                
+                // IQ 계산 DB 저장
+                await changeIq(brain);
+
+                const embed = new EmbedBuilder()
+                .setColor(getColorByPotential(potential))
+                .setTitle('🧠 레벨 정보')
+                .setDescription('오늘 진화를 완료했습니다!\n')
+                .setThumbnail(interaction.user?.displayAvatarURL() || '')
+        
+                embed.addFields(
+                    { name: '레벨', 
+                        value: 'Lv. ' + brain.brLv,
+                        inline: false 
+                    },
+                    { name: '시냅스', 
+                        value: '1000 / 1000',
+                        inline: false 
+                    },
+                );
+                
+                // 진화 버튼
+                const isEvolved = brain.brEvolved;
+                const upgrade = new ButtonBuilder()
+                    .setCustomId('brain_evolve_' + userId)
+                    .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
+                    .setStyle(ButtonStyle.Success)
+                    .setDisabled(isEvolved);
+                const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+        
+                await interaction.update({ 
+                    embeds: [embed], 
+                    components: [rowButton],
+                });
+            }
+            // 뉴런 강화
+            if (interaction.customId.includes('upgrade_neuron')) {
+                const userId = interaction.user.id;
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("뉴런 강화 오류 발생");
+                    return;
+                }
+
+                const synapse = brain.brSynapse;
+                const potential = brain.brPotential;
+                const neuronLv = brain.brNeuronLv;
+
+                // 시냅스 모두 사용
+                if (synapse <= 0) {
+                    const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
+                    .setTitle('🔍 뉴런 정보')
+                    .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
+                    .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                    .setFooter({
+                        text: `요청자: ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    });
+            
+                    embed.addFields(
+                        { name: '뉴런', 
+                            value: printNeuronUI(neuronLv),
+                            inline: false 
+                        }
+                    );
+                    // 강화 버튼
+                    const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
+            
+                    await interaction.update({ 
+                        embeds: [embed], 
+                        components: [rowButton],
+                    });
+                    return;
+                }
+
+                const newNeuronLv = upgradeNeuron(neuronLv);
+                const isSuccess = neuronLv + 1 == newNeuronLv;
+                const isDestroyed = neuronLv > 20 && newNeuronLv == 12;
+
+                // DB 결과 저장
+                const result = await changeNeuron(userId, neuronLv, newNeuronLv, synapse);
+                // IQ 계산 DB 저장
                 const newBrain = await getBrain(userId);
                 if (newBrain) {
                     brain = newBrain;
                 }
-            }
-            
-            // IQ 계산 DB 저장
-            await changeIq(brain);
+                await changeIq(brain);
+                // DB 작업 실패 시
+                if (!result) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🔍 잠재능력 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
 
-            const embed = new EmbedBuilder()
-            .setColor(getColorByPotential(potential))
-            .setTitle('🧠 레벨 정보')
-            .setDescription('오늘 진화를 완료했습니다!\n')
-            .setThumbnail(interaction.user?.displayAvatarURL() || '')
-    
-            embed.addFields(
-                { name: '레벨', 
-                    value: 'Lv. ' + brain.brLv,
-                    inline: false 
-                },
-                { name: '시냅스', 
-                    value: '1000 / 1000',
-                    inline: false 
-                },
-            );
-            
-            // 진화 버튼
-            const isEvolved = brain.brEvolved;
-            const upgrade = new ButtonBuilder()
-                .setCustomId('brain_evolve_' + userId)
-                .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
-                .setStyle(ButtonStyle.Success)
-                .setDisabled(isEvolved);
-            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
-    
-            await interaction.update({ 
-                embeds: [embed], 
-                components: [rowButton],
-            });
-        }
-        // 뉴런 강화
-        if (interaction.customId.includes('upgrade_neuron')) {
-            const userId = interaction.user.id;
-            let brain = await getBrain(userId);
-            if (!brain)  {
-                console.warn("뉴런 강화 오류 발생");
-                return;
-            }
-
-            const synapse = brain.brSynapse;
-            const potential = brain.brPotential;
-            const neuronLv = brain.brNeuronLv;
-
-            // 시냅스 모두 사용
-            if (synapse <= 0) {
                 const embed = new EmbedBuilder()
                 .setColor(getColorByPotential(potential))
                 .setTitle('🔍 뉴런 정보')
-                .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
-                .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
+                    (isSuccess ? '✅ 뉴런 강화 성공!\n' : (isDestroyed ? '💀 뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '❌ 뉴런 강화 실패...\n')))
+                .setThumbnail(isSuccess ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
                 .setFooter({
                     text: `요청자: ${interaction.user.tag}`,
                     iconURL: interaction.user.displayAvatarURL()
@@ -226,174 +285,119 @@ client.on(Events.InteractionCreate, async interaction => {
         
                 embed.addFields(
                     { name: '뉴런', 
-                        value: printNeuronUI(neuronLv),
+                        value: printNeuronUI(newNeuronLv),
                         inline: false 
                     }
                 );
+        
                 // 강화 버튼
-                const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success).setDisabled(true);
+                const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success);
                 const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
         
                 await interaction.update({ 
                     embeds: [embed], 
                     components: [rowButton],
                 });
-                return;
             }
+            // 잠재능력 재설정
+            if (interaction.customId.includes('upgrade_potential')) {
+                const userId = interaction.user.id;
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("잠재능력 재설정 오류 발생");
+                    return;
+                }
 
-            const newNeuronLv = upgradeNeuron(neuronLv);
-            const isSuccess = neuronLv + 1 == newNeuronLv;
-            const isDestroyed = neuronLv > 20 && newNeuronLv == 20;
+                const synapse = brain.brSynapse;
+                const potential = brain.brPotential;
 
-            // DB 결과 저장
-            const result = await changeNeuron(userId, neuronLv, newNeuronLv, synapse);
-            // IQ 계산 DB 저장
-            const newBrain = await getBrain(userId);
-            if (newBrain) {
-                brain = newBrain;
-            }
-            await changeIq(brain);
-            // DB 작업 실패 시
-            if (!result) {
-                const embed = new EmbedBuilder()
-                    .setColor(0xFF0000)
+                // 시냅스 모두 사용
+                if (synapse <= 0) {
+                    const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
                     .setTitle('🔍 잠재능력 정보')
-                    .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                    .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
                     .setThumbnail(interaction.user?.displayAvatarURL() || '')
                     .setFooter({
                         text: `요청자: ${interaction.user.tag}`,
                         iconURL: interaction.user.displayAvatarURL()
                     });
+
+                    embed.addFields(
+                        { name: '잠재능력', 
+                            value: printPotential(potential),
+                            inline: false 
+                        }
+                    );
+                    // 강화 버튼
+                    const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
             
-                    interaction.update({ 
-                        embeds: [embed],
-                });
-                return;
-            }
-
-            const embed = new EmbedBuilder()
-            .setColor(getColorByPotential(potential))
-            .setTitle('🔍 뉴런 정보')
-            .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
-                (isSuccess ? '뉴런 강화 성공!\n' : (isDestroyed ? '뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '뉴런 강화 실패...\n')))
-            .setThumbnail(isSuccess ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
-            .setFooter({
-                text: `요청자: ${interaction.user.tag}`,
-                iconURL: interaction.user.displayAvatarURL()
-            });
-    
-            embed.addFields(
-                { name: '뉴런', 
-                    value: printNeuronUI(newNeuronLv),
-                    inline: false 
+                    await interaction.update({ 
+                        embeds: [embed], 
+                        components: [rowButton],
+                    });
+                    return;
                 }
-            );
-    
-            // 강화 버튼
-            const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success);
-            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
-    
-            await interaction.update({ 
-                embeds: [embed], 
-                components: [rowButton],
-            });
-        }
-        // 잠재능력 재설정
-        if (interaction.customId.includes('upgrade_potential')) {
-            const userId = interaction.user.id;
-            let brain = await getBrain(userId);
-            if (!brain)  {
-                console.warn("잠재능력 재설정 오류 발생");
-                return;
-            }
 
-            const synapse = brain.brSynapse;
-            const potential = brain.brPotential;
+                const newPotential = rerollPotential(potential);
+                const isPromoted = potential.split('_')[0] != newPotential.split('_')[0];
 
-            // 시냅스 모두 사용
-            if (synapse <= 0) {
+                // DB 결과 저장
+                const result = await changePotential(userId, potential, newPotential, synapse);
+                // IQ 계산 DB 저장
+                const newBrain = await getBrain(userId);
+                if (newBrain) {
+                    brain = newBrain;
+                }
+                await changeIq(brain);
+                // DB 작업 실패 시
+                if (!result) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🔍 잠재능력 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
+
                 const embed = new EmbedBuilder()
-                .setColor(getColorByPotential(potential))
+                .setColor(getColorByPotential(newPotential))
                 .setTitle('🔍 잠재능력 정보')
-                .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
-                .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
+                    (isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n'))
+                .setThumbnail(isPromoted ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
                 .setFooter({
                     text: `요청자: ${interaction.user.tag}`,
                     iconURL: interaction.user.displayAvatarURL()
                 });
-
+        
                 embed.addFields(
                     { name: '잠재능력', 
-                        value: printPotential(potential),
+                        value: printPotential(newPotential),
                         inline: false 
                     }
                 );
+        
                 // 강화 버튼
-                const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success).setDisabled(true);
+                const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success);
                 const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
         
                 await interaction.update({ 
                     embeds: [embed], 
                     components: [rowButton],
                 });
-                return;
             }
-
-            const newPotential = rerollPotential(potential);
-            const isPromoted = potential.split('_')[0] != newPotential.split('_')[0];
-
-            // DB 결과 저장
-            const result = await changePotential(userId, potential, newPotential, synapse);
-            // IQ 계산 DB 저장
-            const newBrain = await getBrain(userId);
-            if (newBrain) {
-                brain = newBrain;
-            }
-            await changeIq(brain);
-            // DB 작업 실패 시
-            if (!result) {
-                const embed = new EmbedBuilder()
-                    .setColor(0xFF0000)
-                    .setTitle('🔍 잠재능력 정보')
-                    .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
-                    .setThumbnail(interaction.user?.displayAvatarURL() || '')
-                    .setFooter({
-                        text: `요청자: ${interaction.user.tag}`,
-                        iconURL: interaction.user.displayAvatarURL()
-                    });
-            
-                    interaction.update({ 
-                        embeds: [embed],
-                });
-                return;
-            }
-
-            const embed = new EmbedBuilder()
-            .setColor(getColorByPotential(newPotential))
-            .setTitle('🔍 잠재능력 정보')
-            .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
-                (isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n'))
-            .setThumbnail(isPromoted ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
-            .setFooter({
-                text: `요청자: ${interaction.user.tag}`,
-                iconURL: interaction.user.displayAvatarURL()
-            });
-    
-            embed.addFields(
-                { name: '잠재능력', 
-                    value: printPotential(newPotential),
-                    inline: false 
-                }
-            );
-    
-            // 강화 버튼
-            const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success);
-            const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
-    
-            await interaction.update({ 
-                embeds: [embed], 
-                components: [rowButton],
-            });
+        } catch (error) {
+            console.error(error);
         }
     }
 });
@@ -437,6 +441,10 @@ nodeCron.schedule('0 0 * * *', function() {
     resetIsEvolvedFalse();
     console.log('crontab schedule: reset isEvolved complete.');
 })
+
+export function serverMessage(message: string) {
+
+}
 
 // commands 컬렉션 내보내기 (다른 파일에서 명령어 목록에 접근할 수 있도록)
 export { commands };

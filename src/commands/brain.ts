@@ -80,7 +80,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
         .setTitle('🧠 레벨 정보')
-        .setDescription('뉴런을 강화할 수 있습니다.\n')
+        .setDescription('레벨을 강화할 수 있습니다.\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
 
         embed.addFields(
