@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ModalBuilder, LabelBuilder } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, Events, ClientEvents, ChatInputCommandInteraction, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, ModalBuilder, LabelBuilder, TextChannel } from 'discord.js';
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -254,6 +254,10 @@ client.on(Events.InteractionCreate, async interaction => {
                     brain = newBrain;
                 }
                 await changeIq(brain);
+                // 25성 이상 강화 성공 시 채널 메시지 전송
+                if (newNeuronLv >= 25) {
+                    sendMessageOnChannel(interaction.channelId, '<@' + userId + '> 님이 뉴런 ⭐ ' + newNeuronLv + '성 강화에 성공하였습니다! 모두 축하해주세요!');
+                }
                 // DB 작업 실패 시
                 if (!result) {
                     const embed = new EmbedBuilder()
@@ -442,8 +446,10 @@ nodeCron.schedule('0 0 * * *', function() {
     console.log('crontab schedule: reset isEvolved complete.');
 })
 
-export function serverMessage(message: string) {
+export function sendMessageOnChannel(channelId: string, message: string) {
+    const channel = client.channels.cache.get(channelId) as TextChannel;
 
+    channel.send(message);
 }
 
 // commands 컬렉션 내보내기 (다른 파일에서 명령어 목록에 접근할 수 있도록)
