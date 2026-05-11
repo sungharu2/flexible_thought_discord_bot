@@ -151,7 +151,7 @@ client.on(Events.InteractionCreate, async interaction => {
             .setColor(getColorByPotential(potential))
             .setTitle('🔍 뉴런 정보')
             .setDescription(isSuccess ? '뉴런 강화 성공!\n' : (isDestroyed ? '뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '뉴런 강화 실패...\n'))
-            .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+            .setThumbnail(isSuccess ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,
                 iconURL: interaction.user.displayAvatarURL()
@@ -192,7 +192,7 @@ client.on(Events.InteractionCreate, async interaction => {
             .setColor(getColorByPotential(newPotential))
             .setTitle('🔍 잠재능력 정보')
             .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n')
-            .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+            .setThumbnail(isPromoted ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,
                 iconURL: interaction.user.displayAvatarURL()

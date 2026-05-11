@@ -58,7 +58,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         .setColor(getColorByPotential(potential))
         .setTitle('🔍 두뇌 정보')
         .setDescription('이것이 당신의 두뇌입니다.')
-        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setThumbnail(interaction.user?.displayAvatarURL() || '')
         .setFooter({
             text: `요청자: ${interaction.user.tag}`,
             iconURL: interaction.user.displayAvatarURL()
@@ -84,7 +84,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         .setColor(getColorByPotential(potential))
         .setTitle('🔍 뉴런 정보')
         //.setDescription('뉴런을 강화할 수 있습니다.\n')
-        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setThumbnail(interaction.user?.displayAvatarURL() || '')
         .setFooter({
             text: `요청자: ${interaction.user.tag}`,
             iconURL: interaction.user.displayAvatarURL()
@@ -112,7 +112,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         .setColor(getColorByPotential(potential))
         .setTitle('🔍 잠재능력 정보')
         .setDescription('잠재능력을 재설정할 수 있습니다.\n')
-        .setThumbnail(interaction.client.user?.displayAvatarURL() || '')
+        .setThumbnail(interaction.user?.displayAvatarURL() || '')
         .setFooter({
             text: `요청자: ${interaction.user.tag}`,
             iconURL: interaction.user.displayAvatarURL()
