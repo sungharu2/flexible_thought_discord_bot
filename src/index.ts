@@ -5,7 +5,7 @@ import path from 'path';
 import { deployCommands } from "./deploy-commands";
 import { initChannels } from './init-channels';
 import { getUser, insertNewUser } from './modules/user/user.service';
-import { changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service';
+import { changeIq, changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service';
 import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
 import { getColorByPotential } from './commands/brain';
 import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron';
@@ -137,8 +137,15 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     // 버튼 상호작용
     if (interaction.isButton()) {
+
+        // 타인의 메시지 상호작용 시
+        console.log('####interaction.customId: ' + interaction.customId);
+        if (!interaction.customId.includes(interaction.user.id)) {
+            return;
+        }
+
         // 진화
-        if (interaction.customId === 'brain_evolve') {
+        if (interaction.customId.includes('brain_evolve')) {
             const userId = interaction.user.id;
             let brain = await getBrain(userId);
             if (!brain)  {
@@ -157,6 +164,9 @@ client.on(Events.InteractionCreate, async interaction => {
                     brain = newBrain;
                 }
             }
+            
+            // IQ 계산 DB 저장
+            await changeIq(brain);
 
             const embed = new EmbedBuilder()
             .setColor(getColorByPotential(potential))
@@ -178,7 +188,7 @@ client.on(Events.InteractionCreate, async interaction => {
             // 진화 버튼
             const isEvolved = brain.brEvolved;
             const upgrade = new ButtonBuilder()
-                .setCustomId('brain_evolve')
+                .setCustomId('brain_evolve_' + userId)
                 .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
                 .setStyle(ButtonStyle.Success)
                 .setDisabled(isEvolved);
@@ -190,13 +200,14 @@ client.on(Events.InteractionCreate, async interaction => {
             });
         }
         // 뉴런 강화
-        if (interaction.customId === 'upgrade_neuron') {
+        if (interaction.customId.includes('upgrade_neuron')) {
             const userId = interaction.user.id;
-            const brain = await getBrain(userId);
+            let brain = await getBrain(userId);
             if (!brain)  {
                 console.warn("뉴런 강화 오류 발생");
                 return;
             }
+
             const synapse = brain.brSynapse;
             const potential = brain.brPotential;
             const neuronLv = brain.brNeuronLv;
@@ -220,7 +231,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 );
                 // 강화 버튼
-                const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success).setDisabled(true);
+                const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success).setDisabled(true);
                 const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
         
                 await interaction.update({ 
@@ -235,7 +246,13 @@ client.on(Events.InteractionCreate, async interaction => {
             const isDestroyed = neuronLv > 20 && newNeuronLv == 20;
 
             // DB 결과 저장
-            const result = changeNeuron(userId, neuronLv, newNeuronLv, synapse);
+            const result = await changeNeuron(userId, neuronLv, newNeuronLv, synapse);
+            // IQ 계산 DB 저장
+            const newBrain = await getBrain(userId);
+            if (newBrain) {
+                brain = newBrain;
+            }
+            await changeIq(brain);
             // DB 작업 실패 시
             if (!result) {
                 const embed = new EmbedBuilder()
@@ -257,7 +274,8 @@ client.on(Events.InteractionCreate, async interaction => {
             const embed = new EmbedBuilder()
             .setColor(getColorByPotential(potential))
             .setTitle('🔍 뉴런 정보')
-            .setDescription(isSuccess ? '뉴런 강화 성공!\n' : (isDestroyed ? '뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '뉴런 강화 실패...\n'))
+            .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
+                (isSuccess ? '뉴런 강화 성공!\n' : (isDestroyed ? '뉴런이 파괴되어 20성으로 손상되었습니다...\n' : '뉴런 강화 실패...\n')))
             .setThumbnail(isSuccess ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,
@@ -272,7 +290,7 @@ client.on(Events.InteractionCreate, async interaction => {
             );
     
             // 강화 버튼
-            const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success);
+            const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success);
             const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
     
             await interaction.update({ 
@@ -281,13 +299,14 @@ client.on(Events.InteractionCreate, async interaction => {
             });
         }
         // 잠재능력 재설정
-        if (interaction.customId === 'upgrade_potential') {
+        if (interaction.customId.includes('upgrade_potential')) {
             const userId = interaction.user.id;
-            const brain = await getBrain(userId);
+            let brain = await getBrain(userId);
             if (!brain)  {
                 console.warn("잠재능력 재설정 오류 발생");
                 return;
             }
+
             const synapse = brain.brSynapse;
             const potential = brain.brPotential;
 
@@ -310,7 +329,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     }
                 );
                 // 강화 버튼
-                const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success).setDisabled(true);
+                const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success).setDisabled(true);
                 const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
         
                 await interaction.update({ 
@@ -324,7 +343,13 @@ client.on(Events.InteractionCreate, async interaction => {
             const isPromoted = potential.split('_')[0] != newPotential.split('_')[0];
 
             // DB 결과 저장
-            const result = changePotential(userId, potential, newPotential, synapse);
+            const result = await changePotential(userId, potential, newPotential, synapse);
+            // IQ 계산 DB 저장
+            const newBrain = await getBrain(userId);
+            if (newBrain) {
+                brain = newBrain;
+            }
+            await changeIq(brain);
             // DB 작업 실패 시
             if (!result) {
                 const embed = new EmbedBuilder()
@@ -346,7 +371,8 @@ client.on(Events.InteractionCreate, async interaction => {
             const embed = new EmbedBuilder()
             .setColor(getColorByPotential(newPotential))
             .setTitle('🔍 잠재능력 정보')
-            .setDescription(isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n')
+            .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + 
+                (isPromoted ? '★★잠재능력 등급 상승!★★\n' : '잠재능력 재설정 완료!\n'))
             .setThumbnail(isPromoted ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
             .setFooter({
                 text: `요청자: ${interaction.user.tag}`,
@@ -361,7 +387,7 @@ client.on(Events.InteractionCreate, async interaction => {
             );
     
             // 강화 버튼
-            const upgrade = new ButtonBuilder().setCustomId('upgrade_potential').setLabel('재설정!').setStyle(ButtonStyle.Success);
+            const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success);
             const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
     
             await interaction.update({ 

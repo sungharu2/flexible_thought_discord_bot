@@ -80,7 +80,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const embed = new EmbedBuilder()
         .setColor(getColorByPotential(potential))
         .setTitle('🧠 레벨 정보')
-        //.setDescription('뉴런을 강화할 수 있습니다.\n')
+        .setDescription('뉴런을 강화할 수 있습니다.\n')
         .setThumbnail(interaction.user?.displayAvatarURL() || '')
 
         embed.addFields(
@@ -97,7 +97,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         // 진화 버튼
         const isEvolved = brain.brEvolved;
         const upgrade = new ButtonBuilder()
-            .setCustomId('brain_evolve')
+            .setCustomId('brain_evolve_' + userId)
             .setLabel(isEvolved ? '진화! (오늘 진화 완료)' : '진화! (매일 초기화)')
             .setStyle(ButtonStyle.Success)
             .setDisabled(isEvolved);
@@ -124,7 +124,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         );
 
         // 강화 버튼
-        const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron').setLabel('강화하기!').setStyle(ButtonStyle.Success);
+        const upgrade = new ButtonBuilder().setCustomId('upgrade_neuron_' + userId).setLabel('강화하기!').setStyle(ButtonStyle.Success);
         const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
 
         await interaction.reply({ 
@@ -148,7 +148,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         );
 
         // 강화 버튼
-        const upgrade = new ButtonBuilder().setCustomId('upgrade_potential').setLabel('재설정!').setStyle(ButtonStyle.Success);
+        const upgrade = new ButtonBuilder().setCustomId('upgrade_potential_' + userId).setLabel('재설정!').setStyle(ButtonStyle.Success);
         const rowButton = new ActionRowBuilder<ButtonBuilder>().addComponents(upgrade);
 
         await interaction.reply({ 

@@ -150,7 +150,10 @@ export function upgradeNeuron(neuronLv: number): number {
         return 20;
     }
     else {
-        return neuronLv;
+        if (neuronLv > 15)
+            return neuronLv - 1;
+        else
+            return neuronLv;
     }
 
 }
@@ -185,7 +188,7 @@ export function printNeuronUI(neuronLv: number): string {
     resultUI += '- ' + neuronIntAddStat[neuronLv] + '\n';
     resultUI += '- ' + neuronIntMultStat[neuronLv] + '\n\n';
     resultUI += '- **✅ 성공: ' + (neuronUpgradeSuccessChance[neuronLv] * 100)+ '%**\n';
-    resultUI += '- **❌ 실패: ' + (100 - (neuronUpgradeSuccessChance[neuronLv] * 100 + neuronUpgradeDestroyChance[neuronLv] * 100))+ '%**\n';
+    resultUI += (neuronLv > 15 ? '- **❌ 실패(하락): ' : '- **❌ 실패(유지): ') + (100 - (neuronUpgradeSuccessChance[neuronLv] * 100 + neuronUpgradeDestroyChance[neuronLv] * 100))+ '%**\n';
     resultUI += neuronUpgradeDestroyChance[neuronLv] != 0 ? '- **💀 파괴: ' + (neuronUpgradeDestroyChance[neuronLv] * 100)+ '%** (파괴시 20성)\n' : '';
     resultUI += '\n⭐ ' + (neuronLv + 1) + '성 강화 성공 시\n\n';
     resultUI += '- ' + neuronIntAddStat[neuronLv + 1] + '\n';
