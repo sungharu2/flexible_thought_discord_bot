@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, roleMention, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { getBrain } from '../modules/brain/brain.service';
+import { changeIq, getBrain, getIq } from '../modules/brain/brain.service';
 import { getPotentialData, printPotential, rerollPotential } from '../brain_upgrade/upgrade.potential';
 import { getNeuronDataByLv, printNeuronUI, upgradeNeuron } from '../brain_upgrade/upgrade.neuron';
 import { Brain } from '../modules/brain/brain.types';
@@ -52,6 +52,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const neuronLv = brain.brNeuronLv;
     const potential = brain.brPotential;
 
+    // IQ 계산 DB 저장
+    await changeIq(brain);
 
     if (subcommand == '정보-조회') {
         const embed = new EmbedBuilder()
@@ -158,21 +160,4 @@ export function getColorByPotential(potential: string): number {
         return 0x00ff00
     }
     return 0xffffff;
-}
-
-function getIq(brain: Brain): string {
-    const neuronLv = brain.brNeuronLv;
-    const potential = brain.brPotential;
-
-    const neuronData = getNeuronDataByLv(neuronLv);
-    const potentialData = getPotentialData(potential);
-
-    const baseInt = brain.brLv;
-    const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat;
-    const totalMultStat = neuronData.multStat + potentialData.multStat;
-
-    console.log('totalAddedInt: ' + totalAddedInt);
-    console.log('totalMultStat: ' + totalMultStat + '%');
-
-    return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
 }

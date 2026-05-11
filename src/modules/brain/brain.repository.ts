@@ -26,7 +26,15 @@ export async function findBrainById(userId: string): Promise<BrainRow | null> {
     return rows[0] ?? null;
 };
 
-export async function insertBrainIfNotExists(userId: string, potential: string): Promise<boolean> {
+export async function findBrainTop10ByIq(): Promise<BrainRow[]> {
+    const rows = await query<BrainRow>(
+        'SELECT * FROM tb_brain ORDER BY br_iq desc LIMIT 10;',
+    );
+    return rows;
+};
+
+
+export async function insertBrainIfNotExists(userId: string, potential: string, iq: string): Promise<boolean> {
     const newBrain = {
         'discord_user_id': userId,
         'dt_created': new Date(),
@@ -34,6 +42,7 @@ export async function insertBrainIfNotExists(userId: string, potential: string):
         'br_lv': 1,
         'br_neuron_lv': 0,
         'br_potential': potential,
+        'br_iq': iq,
     };
 
     const result = await query(
@@ -71,6 +80,22 @@ export async function updatePotential(userId: string, newPotential: string): Pro
         WHERE discord_user_id = ?
         `,
         [new Date(), newPotential, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+export async function updateIq(userId: string, iq: string): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_iq = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), iq, userId]
     ) as unknown as ResultSetHeader;
     
     //console.log(result);

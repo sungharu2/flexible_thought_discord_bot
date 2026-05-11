@@ -1,8 +1,20 @@
-import { initBrainPotential } from '../../brain_upgrade/upgrade.potential';
+import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron';
+import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential';
 import { insertNewLog } from '../log/log.service';
-import { findBrainById, insertBrainIfNotExists, updateNeuron, updatePotential } from './brain.repository';
-import { Brain } from './brain.types';
+import { findBrainById, findBrainTop10ByIq, insertBrainIfNotExists, updateIq, updateNeuron, updatePotential } from './brain.repository';
+import { Brain, BrainRow } from './brain.types';
 
+function toBrain(row: BrainRow) : Brain {
+    return {
+        discordUserId: row.discord_user_id,
+        dtCreated: row.dt_created,
+        dtModified: row.dt_modified,
+        brLv: row.br_lv,
+        brNeuronLv: row.br_neuron_lv,
+        brPotential: row.br_potential,
+        brIq: row.br_iq,
+    };
+}
 
 export async function getBrain(userId: string): Promise<Brain | null> {
     const row = await findBrainById(userId);
@@ -15,14 +27,30 @@ export async function getBrain(userId: string): Promise<Brain | null> {
         brLv: row.br_lv,
         brNeuronLv: row.br_neuron_lv,
         brPotential: row.br_potential,
+        brIq: row.br_iq,
     };
+};
+
+export async function getBrainTop10ByIq(): Promise<Brain[]> {
+    const rows = await findBrainTop10ByIq();
+
+    return rows.map(toBrain);
 };
 
 export async function insertNewBrain(userId: string): Promise<boolean> {
     // 신규 생성 두뇌 잠재능력 초기화 로직
     const potential = initBrainPotential();
+    const iq = getIq({
+        brNeuronLv: 1,
+        brPotential: potential,
+        discordUserId: '',
+        dtCreated: new Date(),
+        dtModified: new Date(),
+        brLv: 0,
+        brIq: ''
+    })
 
-    return await insertBrainIfNotExists(userId, potential);
+    return await insertBrainIfNotExists(userId, potential, iq);
 };
 
 export async function changeNeuron(userId: string, oldNeuron: number, newNeuron: number): Promise<boolean> {
@@ -44,3 +72,28 @@ export async function changePotential(userId: string, oldPotential: string, newP
 
     return result
 };
+
+export async function changeIq(brain: Brain): Promise<boolean> {
+    const iq = getIq(brain)
+
+    const result = await updateIq(brain.discordUserId, iq);
+
+    return result
+};
+
+export function getIq(brain: Brain): string {
+    const neuronLv = brain.brNeuronLv;
+    const potential = brain.brPotential;
+
+    const neuronData = getNeuronDataByLv(neuronLv);
+    const potentialData = getPotentialData(potential);
+
+    const baseInt = brain.brLv;
+    const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat;
+    const totalMultStat = neuronData.multStat + potentialData.multStat;
+
+    console.log('totalAddedInt: ' + totalAddedInt);
+    console.log('totalMultStat: ' + totalMultStat + '%');
+
+    return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
+}

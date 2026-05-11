@@ -5,6 +5,7 @@ export type BrainRow = {
     br_lv: number;
     br_neuron_lv: number;
     br_potential: string;
+    br_iq: string;
  };
   
 export type Brain = {
@@ -14,4 +15,5 @@ export type Brain = {
     brLv: number;
     brNeuronLv: number;
     brPotential: string;
+    brIq: string;
 }
