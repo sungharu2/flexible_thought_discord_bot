@@ -183,9 +183,9 @@ const potentialListLegendaryThird = [
 
 // 등급업 확률
 const potentialPromotionChance = [
-    0.15,
-    0.035,
-    0.014
+    0.06,
+    0.018,
+    0.003
 ]
 
 export function initBrainPotential(): string {
@@ -200,7 +200,7 @@ export function initBrainPotential(): string {
 
 export function rerollPotential(potential: string): string {
     const potentialGrade = potential.split('_')[0];
-    if (potentialGrade == '1') {
+    if (potentialGrade == '0' || potentialGrade == '1') {
         if (tryPromotion(potentialGrade)) {
             const newPromotedPotential = '2_0_0_0';
             return rerollPotential(newPromotedPotential);
@@ -309,7 +309,7 @@ type PotentialData = {
 }
 export function getPotentialData(potential: string): PotentialData {
     const splitedPotential = potential.split('_');
-    console.log('splitedPotential: ' + splitedPotential);
+    //console.log('splitedPotential: ' + splitedPotential);
     const potentialGrade = splitedPotential[0];
     const potentialFirst = Number.parseInt(splitedPotential[1]);
     const potentialSecond = Number.parseInt(splitedPotential[2]);

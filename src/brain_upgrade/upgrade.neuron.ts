@@ -1,70 +1,70 @@
 import crypto from 'crypto';
 
 const neuronUpgradeSuccessChance = [
-    0.95,
+    0.95, // 0 -> 1
     0.9,
     0.85,
     0.8,
     0.75,
-    0.7,
+    0.7,  // 5 -> 6
     0.65,
     0.6,
     0.55,
     0.5,
-    0.45,
+    0.45, // 10 -> 11
     0.4,
     0.35,
     0.3,
     0.3,
+    0.3,  // 15 -> 16
     0.3,
-    0.25,
-    0.2,
     0.15,
     0.15,
     0.15,
+    0.3, // 20 -> 21
     0.15,
     0.15,
     0.1,
     0.1,
-    0.1,
-    0.05,
-    0.05,
+    0.1, // 25 -> 26
+    0.07,
     0.05,
     0.03,
-    0.03,
+    0.01,
+    0.01, // 30 -> max
 ];
 const neuronUpgradeDestroyChance = [
+    0, // 0 -> 1
     0,
     0,
     0,
     0,
+    0, // 5 -> 6
     0,
     0,
     0,
     0,
+    0, // 10 -> 11
     0,
     0,
     0,
     0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0.03,
-    0.03,
-    0.05,
+    0.01, // 15 -> 16
+    0.01,
+    0.04,
+    0.04,
     0.06,
-    0.07,
-    0.1,
+    0.07, // 20 -> 21
+    0.08,
     0.15,
+    0.16,
+    0.17,
+    0.18, // 25 -> 26
+    0.19,
     0.2,
-    0.25,
-    0.3,
+    0.2,
+    0.2,
+    0.2,  // 30 -> max
 ];
 
 const neuronIntAddStat = [
@@ -141,19 +141,16 @@ export function upgradeNeuron(neuronLv: number): number {
     const upgradeDestroyChance = neuronUpgradeDestroyChance[neuronLv];
 
     const rand = generateRandomNumber(1000);
-    console.log('rand: ' + rand);
-    console.log('upgradeSuccesChance * 1000: ' + upgradeSuccesChance * 1000);
-    console.log('1000 - upgradeDestroyChance * 1000: ' + (1000 - upgradeDestroyChance * 1000));
+    //console.log('rand: ' + rand);
+    //console.log('upgradeSuccesChance * 1000: ' + upgradeSuccesChance * 1000);
+    //console.log('1000 - upgradeDestroyChance * 1000: ' + (1000 - upgradeDestroyChance * 1000));
     if (rand < upgradeSuccesChance * 1000) {
         return neuronLv + 1;    
     } else if (rand > 1000 - upgradeDestroyChance * 1000) {
-        return 20;
+        return 12;
     }
     else {
-        if (neuronLv > 15)
-            return neuronLv - 1;
-        else
-            return neuronLv;
+        return neuronLv;
     }
 
 }
@@ -188,8 +185,8 @@ export function printNeuronUI(neuronLv: number): string {
     resultUI += '- ' + neuronIntAddStat[neuronLv] + '\n';
     resultUI += '- ' + neuronIntMultStat[neuronLv] + '\n\n';
     resultUI += '- **✅ 성공: ' + (neuronUpgradeSuccessChance[neuronLv] * 100)+ '%**\n';
-    resultUI += (neuronLv > 15 ? '- **❌ 실패(하락): ' : '- **❌ 실패(유지): ') + (100 - (neuronUpgradeSuccessChance[neuronLv] * 100 + neuronUpgradeDestroyChance[neuronLv] * 100))+ '%**\n';
-    resultUI += neuronUpgradeDestroyChance[neuronLv] != 0 ? '- **💀 파괴: ' + (neuronUpgradeDestroyChance[neuronLv] * 100)+ '%** (파괴시 20성)\n' : '';
+    resultUI += '- **❌ 실패(유지): ' + (100 - (neuronUpgradeSuccessChance[neuronLv] * 100 + neuronUpgradeDestroyChance[neuronLv] * 100))+ '%**\n';
+    resultUI += neuronUpgradeDestroyChance[neuronLv] != 0 ? '- **💀 파괴: ' + (neuronUpgradeDestroyChance[neuronLv] * 100)+ '%** (파괴시 12성)\n' : '';
     resultUI += '\n⭐ ' + (neuronLv + 1) + '성 강화 성공 시\n\n';
     resultUI += '- ' + neuronIntAddStat[neuronLv + 1] + '\n';
     resultUI += '- ' + neuronIntMultStat[neuronLv + 1] + '\n\n';
@@ -205,8 +202,8 @@ type NeuronData = {
 export function getNeuronDataByLv(neuronLv: number): NeuronData {
     const addStat = Number.parseInt(neuronIntAddStat[neuronLv].replace('INT +', '')) || 0;
     const multStat = Number.parseInt(neuronIntMultStat[neuronLv].replace('INT +', '').replace('%', '')) || 0;
-    console.log('addStat: ' + addStat);
-    console.log('multStat: ' + multStat);
+    //console.log('addStat: ' + addStat);
+    //console.log('multStat: ' + multStat);
     return {
         addStat: addStat,
         multStat: multStat

@@ -22,7 +22,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 
 export async function addHelpEmbed(embed: EmbedBuilder) {
     embed.addFields(
-        { name: '명령어 사용법', value: `'bots-##' 채널에서 '/' 슬래시를 입력하여 명령어를 사용할 수 있습니다.`, inline: false },
+        { name: '명령어 사용법', value: `'bot-##' 채널에서 '/' 슬래시를 입력하여 명령어를 사용할 수 있습니다.`, inline: false },
         { name: '명령어 예시', value: '/두뇌 정보-조회, /랭킹-두뇌 iq-랭킹', inline: false },
         { name: '명령어 설명', value: `
             두뇌: 자신의 두뇌 정보를 확인하고 강화할 수 있습니다.
@@ -38,5 +38,6 @@ export async function addHelpEmbed(embed: EmbedBuilder) {
             - ⚠️ 현재 INT 스탯만 유효한 옵션입니다.`,
             inline: false },
         { name: '확률 공지 링크', value: 'https://www.notion.so/v0-1-359b765c49f980bd8fcfea1dbc286d7b?source=copy_link', inline: false },
+        { name: '운영자 계좌', value: '**-> 토스뱅크 1000-1286-5583**\n후원 시 소정의 상품을 드립니다.', inline: false },
     );
 }
