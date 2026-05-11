@@ -26,9 +26,41 @@ export async function findBrainById(userId: string): Promise<BrainRow | null> {
     return rows[0] ?? null;
 };
 
-export async function findBrainTop10ByIq(): Promise<BrainRow[]> {
+export async function findBrainIqTop10ByServer(serverId: string): Promise<BrainRow[]> {
     const rows = await query<BrainRow>(
-        'SELECT * FROM tb_brain ORDER BY br_iq desc LIMIT 10;',
+        `SELECT tb.* 
+        FROM tb_brain tb, tb_user_server_map tm
+        WHERE 
+            tb.discord_user_id = tm.discord_user_id
+            AND tm.discord_server_id = ?
+        ORDER BY br_iq desc LIMIT 10;`,
+        [serverId]
+    );
+    return rows;
+};
+
+export async function findBrainNeuronTop10ByServer(serverId: string): Promise<BrainRow[]> {
+    const rows = await query<BrainRow>(
+        `SELECT tb.* 
+        FROM tb_brain tb, tb_user_server_map tm
+        WHERE 
+            tb.discord_user_id = tm.discord_user_id
+            AND tm.discord_server_id = ?
+        ORDER BY br_neuron_lv desc LIMIT 10;`,
+        [serverId]
+    );
+    return rows;
+};
+
+export async function findBrainLevelTop10ByServer(serverId: string): Promise<BrainRow[]> {
+    const rows = await query<BrainRow>(
+        `SELECT tb.* 
+        FROM tb_brain tb, tb_user_server_map tm
+        WHERE 
+            tb.discord_user_id = tm.discord_user_id
+            AND tm.discord_server_id = ?
+        ORDER BY br_lv desc LIMIT 10;`,
+        [serverId]
     );
     return rows;
 };

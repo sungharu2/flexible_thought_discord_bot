@@ -1,7 +1,7 @@
 import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron';
 import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential';
 import { insertNewLog } from '../log/log.service';
-import { findBrainById, findBrainTop10ByIq, insertBrainIfNotExists, updateIq, updateNeuron, updatePotential } from './brain.repository';
+import { findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateIq, updateNeuron, updatePotential } from './brain.repository';
 import { Brain, BrainRow } from './brain.types';
 
 function toBrain(row: BrainRow) : Brain {
@@ -31,8 +31,20 @@ export async function getBrain(userId: string): Promise<Brain | null> {
     };
 };
 
-export async function getBrainTop10ByIq(): Promise<Brain[]> {
-    const rows = await findBrainTop10ByIq();
+export async function getBrainTop10ByIq(serverId: string): Promise<Brain[]> {
+    const rows = await findBrainIqTop10ByServer(serverId);
+
+    return rows.map(toBrain);
+};
+
+export async function getBrainTop10ByNeuron(serverId: string): Promise<Brain[]> {
+    const rows = await findBrainNeuronTop10ByServer(serverId);
+
+    return rows.map(toBrain);
+};
+
+export async function getBrainTop10ByLevel(serverId: string): Promise<Brain[]> {
+    const rows = await findBrainLevelTop10ByServer(serverId);
 
     return rows.map(toBrain);
 };

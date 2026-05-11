@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { getBrainTop10ByIq } from '../modules/brain/brain.service';
+import { getBrainTop10ByIq, getBrainTop10ByLevel, getBrainTop10ByNeuron } from '../modules/brain/brain.service';
 import { Table } from 'embed-table';
 
 
@@ -28,11 +28,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await interaction.reply({ content: '이 명령어는 서버에서만 사용할 수 있습니다.', ephemeral: true });
         return;
     }
+    const guildId = interaction.guildId!;
 
     const subcommand = interaction.options.getSubcommand();
     
     if (subcommand == 'iq-랭킹') {
-        const iqTop10List = await getBrainTop10ByIq();
+        const iqTop10List = await getBrainTop10ByIq(guildId);
         const table = new Table({
             titles: ['순위', 'IQ', '유저명'],
             titleIndexes: [0, 6, 25],
@@ -50,10 +51,13 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             i++;
         });
 
+        let top1user = await interaction.client.users.fetch(iqTop10List[0].discordUserId);
+
         const embed = new EmbedBuilder()
         .setColor(0x0099FF)
         .setTitle('🔍 IQ 랭킹')
         .setDescription('서버 내 상위 10명만 출력됩니다.')
+        .setThumbnail(top1user?.displayAvatarURL() || '')
         .setFooter({
             text: `요청자: ${interaction.user.tag}`,
             iconURL: interaction.user.displayAvatarURL()
@@ -66,10 +70,80 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             //flags: [4096] 
         });
     }
-    if (subcommand == '뉴런-조회') {
+    if (subcommand == '뉴런-랭킹') {
+        const iqTop10List = await getBrainTop10ByNeuron(guildId);
+        const table = new Table({
+            titles: ['순위', '뉴런', '유저명'],
+            titleIndexes: [0, 6, 22],
+            columnIndexes: [0, 5, 13],
+            start: '`',
+            end: '',
+            padEnd: 2
+        });
 
+        //console.log(iqTop10List);
+
+        let i = 1;
+        iqTop10List.forEach(e => {
+            table.addRow([i + '', '★' + e.brNeuronLv , '`<@' + e.discordUserId + '>'], { override: 4});
+            i++;
+        });
+
+        let top1user = await interaction.client.users.fetch(iqTop10List[0].discordUserId);
+
+        const embed = new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle('🔍 뉴런 랭킹')
+        .setDescription('서버 내 상위 10명만 출력됩니다.')
+        .setThumbnail(top1user?.displayAvatarURL() || '')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
+
+        embed.setFields(table.toField());
+        // flags: [4096] >> @silent 
+        await interaction.reply({ 
+            embeds: [embed], 
+            //flags: [4096] 
+        });
     }
-    if (subcommand == '레벨-조회') {
+    if (subcommand == '레벨-랭킹') {
+        const iqTop10List = await getBrainTop10ByLevel(guildId);
+        const table = new Table({
+            titles: ['순위', '레벨', '유저명'],
+            titleIndexes: [0, 6, 20],
+            columnIndexes: [0, 5, 13],
+            start: '`',
+            end: '',
+            padEnd: 2
+        });
 
+        //console.log(iqTop10List);
+
+        let i = 1;
+        iqTop10List.forEach(e => {
+            table.addRow([i + '', 'Lv.' + e.brLv, '`<@' + e.discordUserId + '>'], { override: 4});
+            i++;
+        });
+
+        let top1user = await interaction.client.users.fetch(iqTop10List[0].discordUserId);
+
+        const embed = new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle('🔍 레벨 랭킹')
+        .setDescription('서버 내 상위 10명만 출력됩니다.')
+        .setThumbnail(top1user?.displayAvatarURL() || '')
+        .setFooter({
+            text: `요청자: ${interaction.user.tag}`,
+            iconURL: interaction.user.displayAvatarURL()
+        });
+
+        embed.setFields(table.toField());
+        // flags: [4096] >> @silent 
+        await interaction.reply({ 
+            embeds: [embed], 
+            //flags: [4096] 
+        });
     }
 }

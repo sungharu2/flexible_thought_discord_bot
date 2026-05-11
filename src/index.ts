@@ -9,6 +9,7 @@ import { changeNeuron, changePotential, getBrain, insertNewBrain } from './modul
 import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential';
 import { getColorByPotential } from './commands/brain';
 import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron';
+import { insertNewUserMap } from './modules/user_server_map/usermap.service';
 
 // .env 파일 로드
 config();
@@ -65,6 +66,12 @@ for (const file of eventFiles) {
 // 상호작용 이벤트 처리
 client.on(Events.InteractionCreate, async interaction => {
     console.log(`상호작용 발생: ${interaction.user.tag} (${interaction.user.id})`);
+
+    // 유저-서버 맵 정보 저장
+    if (interaction.guildId) {
+        insertNewUserMap(interaction.user.id, interaction.guildId);
+    }
+
     // 채팅 명령어 상호작용
     if (interaction.isChatInputCommand()) {
         // 신규 유저 정보 추가
