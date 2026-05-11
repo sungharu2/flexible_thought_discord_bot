@@ -308,67 +308,69 @@ type PotentialData = {
     multStat: number
 }
 export function getPotentialData(potential: string): PotentialData {
-    const potentialGrade = potential.split('_')[0];
-    const potentialFirst = Number.parseInt(potential.split('_')[1]);
-    const potentialSecond = Number.parseInt(potential.split('_')[2]);
-    const potentialThird = Number.parseInt(potential.split('_')[3]);
+    const splitedPotential = potential.split('_');
+    console.log('splitedPotential: ' + splitedPotential);
+    const potentialGrade = splitedPotential[0];
+    const potentialFirst = Number.parseInt(splitedPotential[1]);
+    const potentialSecond = Number.parseInt(splitedPotential[2]);
+    const potentialThird = Number.parseInt(splitedPotential[3]);
     let addStat = 0;
     let multStat = 0;
 
     if (potentialGrade == '1') {
         addStat += potentialListRareFirst[potentialFirst].includes('INT') && !potentialListRareFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListRareFirst[potentialFirst].replace('INT +', '')) : 0;
-        addStat += potentialListRareSecond[potentialSecond].includes('INT') && !potentialListRareFirst[potentialSecond].includes('%') ?
+        addStat += potentialListRareSecond[potentialSecond].includes('INT') && !potentialListRareSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListRareSecond[potentialSecond].replace('INT +', '')) : 0;
-        addStat += potentialListRareThird[potentialThird].includes('INT') && !potentialListRareFirst[potentialThird].includes('%') ?
+        addStat += potentialListRareThird[potentialThird].includes('INT') && !potentialListRareThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListRareFirst[potentialThird].replace('INT +', '')) : 0;
         multStat += potentialListRareFirst[potentialFirst].includes('INT') && potentialListRareFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListRareFirst[potentialFirst].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListRareSecond[potentialSecond].includes('INT') && potentialListRareFirst[potentialSecond].includes('%') ?
+        multStat += potentialListRareSecond[potentialSecond].includes('INT') && potentialListRareSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListRareSecond[potentialSecond].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListRareThird[potentialThird].includes('INT') && potentialListRareFirst[potentialThird].includes('%') ?
+        multStat += potentialListRareThird[potentialThird].includes('INT') && potentialListRareThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListRareFirst[potentialThird].replace('INT +', '').replace('%', '')) : 0;
     }
     if (potentialGrade == '2') {
         addStat += potentialListEpicFirst[potentialFirst].includes('INT') && !potentialListEpicFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListEpicFirst[potentialFirst].replace('INT +', '')) : 0;
-        addStat += potentialListEpicSecond[potentialSecond].includes('INT') && !potentialListEpicFirst[potentialSecond].includes('%') ?
+        addStat += potentialListEpicSecond[potentialSecond].includes('INT') && !potentialListEpicSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListEpicSecond[potentialSecond].replace('INT +', '')) : 0;
-        addStat += potentialListEpicThird[potentialThird].includes('INT') && !potentialListEpicFirst[potentialThird].includes('%') ?
+        addStat += potentialListEpicThird[potentialThird].includes('INT') && !potentialListEpicThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListEpicFirst[potentialThird].replace('INT +', '')) : 0;
         multStat += potentialListEpicFirst[potentialFirst].includes('INT') && potentialListEpicFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListEpicFirst[potentialFirst].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListEpicSecond[potentialSecond].includes('INT') && potentialListEpicFirst[potentialSecond].includes('%') ?
+        multStat += potentialListEpicSecond[potentialSecond].includes('INT') && potentialListEpicSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListEpicSecond[potentialSecond].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListEpicThird[potentialThird].includes('INT') && potentialListEpicFirst[potentialThird].includes('%') ?
+        multStat += potentialListEpicThird[potentialThird].includes('INT') && potentialListEpicThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListEpicFirst[potentialThird].replace('INT +', '').replace('%', '')) : 0;
     }    
     if (potentialGrade == '3') {
         addStat += potentialListUniqueFirst[potentialFirst].includes('INT') && !potentialListUniqueFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListUniqueFirst[potentialFirst].replace('INT +', '')) : 0;
-        addStat += potentialListUniqueSecond[potentialSecond].includes('INT') && !potentialListUniqueFirst[potentialSecond].includes('%') ?
+        addStat += potentialListUniqueSecond[potentialSecond].includes('INT') && !potentialListUniqueSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListUniqueSecond[potentialSecond].replace('INT +', '')) : 0;
-        addStat += potentialListUniqueThird[potentialThird].includes('INT') && !potentialListUniqueFirst[potentialThird].includes('%') ?
+        addStat += potentialListUniqueThird[potentialThird].includes('INT') && !potentialListUniqueThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListUniqueFirst[potentialThird].replace('INT +', '')) : 0;
         multStat += potentialListUniqueFirst[potentialFirst].includes('INT') && potentialListUniqueFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListUniqueFirst[potentialFirst].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListUniqueSecond[potentialSecond].includes('INT') && potentialListUniqueFirst[potentialSecond].includes('%') ?
+        multStat += potentialListUniqueSecond[potentialSecond].includes('INT') && potentialListUniqueSecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListUniqueSecond[potentialSecond].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListUniqueThird[potentialThird].includes('INT') && potentialListUniqueFirst[potentialThird].includes('%') ?
+        multStat += potentialListUniqueThird[potentialThird].includes('INT') && potentialListUniqueThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListUniqueFirst[potentialThird].replace('INT +', '').replace('%', '')) : 0;
     }    
     if (potentialGrade == '4') {
         addStat += potentialListLegendaryFirst[potentialFirst].includes('INT') && !potentialListLegendaryFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListLegendaryFirst[potentialFirst].replace('INT +', '')) : 0;
-        addStat += potentialListLegendarySecond[potentialSecond].includes('INT') && !potentialListLegendaryFirst[potentialSecond].includes('%') ?
+        addStat += potentialListLegendarySecond[potentialSecond].includes('INT') && !potentialListLegendarySecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListLegendarySecond[potentialSecond].replace('INT +', '')) : 0;
-        addStat += potentialListLegendaryThird[potentialThird].includes('INT') && !potentialListLegendaryFirst[potentialThird].includes('%') ?
+        addStat += potentialListLegendaryThird[potentialThird].includes('INT') && !potentialListLegendaryThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListLegendaryFirst[potentialThird].replace('INT +', '')) : 0;
         multStat += potentialListLegendaryFirst[potentialFirst].includes('INT') && potentialListLegendaryFirst[potentialFirst].includes('%') ?
             Number.parseInt(potentialListLegendaryFirst[potentialFirst].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListLegendarySecond[potentialSecond].includes('INT') && potentialListLegendaryFirst[potentialSecond].includes('%') ?
+        multStat += potentialListLegendarySecond[potentialSecond].includes('INT') && potentialListLegendarySecond[potentialSecond].includes('%') ?
             Number.parseInt(potentialListLegendarySecond[potentialSecond].replace('INT +', '').replace('%', '')) : 0;
-        multStat += potentialListLegendaryThird[potentialThird].includes('INT') && potentialListLegendaryFirst[potentialThird].includes('%') ?
+        multStat += potentialListLegendaryThird[potentialThird].includes('INT') && potentialListLegendaryThird[potentialThird].includes('%') ?
             Number.parseInt(potentialListLegendaryFirst[potentialThird].replace('INT +', '').replace('%', '')) : 0;
     }
     return {
