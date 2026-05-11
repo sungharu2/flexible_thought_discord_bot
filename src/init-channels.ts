@@ -1,6 +1,7 @@
 import { ChannelType, EmbedBuilder } from 'discord.js';
 import { Guild } from 'discord.js';
 import { config } from 'dotenv';
+import { addHelpEmbed } from './commands/help';
 
 // .env 파일 로드
 config();
@@ -32,17 +33,12 @@ export async function initChannels(guild: Guild, avatarURL?: string) {
         // 채널 생성 후 help 명령어 자동실행
         const embed = new EmbedBuilder()
             .setColor(0x0099FF)
-            .setTitle('🔍 도움말')
-            .setDescription('도움말을 표시합니다.')
+            .setTitle('📌 도움말')
+            .setDescription('⏱️ 버전: v0.1 / 마지막 수정일: 2026-05-11')
             .setThumbnail(avatarURL || '')
-            .setTimestamp();
-    
-        embed.addFields(
-            { name: '명령어 사용법', value: '명령어를 입력하면 도움말을 표시합니다.', inline: false },
-            { name: '명령어 예시', value: '/ping, /server', inline: false },
-            { name: '명령어 설명', value: 'ping: 봇의 응답 속도를 확인합니다.\nserver: 서버 정보를 표시합니다.', inline: false }
-        );
-    
+            .setTimestamp()
+        addHelpEmbed(embed)
+
         await theChannel.send({ embeds: [embed] });
     }
 

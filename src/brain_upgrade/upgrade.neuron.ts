@@ -200,8 +200,10 @@ type NeuronData = {
 }
 
 export function getNeuronDataByLv(neuronLv: number): NeuronData {
-    const addStat = Number.parseInt(neuronIntAddStat[neuronLv].replace('INT +', ''));
-    const multStat = Number.parseInt(neuronIntMultStat[neuronLv].replace('INT +', '').replace('%', ''));
+    const addStat = Number.parseInt(neuronIntAddStat[neuronLv].replace('INT +', '')) || 0;
+    const multStat = Number.parseInt(neuronIntMultStat[neuronLv].replace('INT +', '').replace('%', '')) || 0;
+    console.log('addStat: ' + addStat);
+    console.log('multStat: ' + multStat);
     return {
         addStat: addStat,
         multStat: multStat

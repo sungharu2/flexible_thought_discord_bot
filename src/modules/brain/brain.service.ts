@@ -163,8 +163,11 @@ export function getIq(brain: Brain): string {
 	const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat;
 	const totalMultStat = neuronData.multStat + potentialData.multStat;
 
-	console.log('totalAddedInt: ' + totalAddedInt);
-	console.log('totalMultStat: ' + totalMultStat + '%');
+	//console.log('baseInt: ' + baseInt);
+	//console.log('neuronData.addStat: ' + neuronData.addStat);
+	//console.log('potentialData.addStat: ' + potentialData.addStat);
+	//console.log('totalAddedInt: ' + totalAddedInt);
+	//console.log('totalMultStat: ' + totalMultStat + '%');
 
 	return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
 }
