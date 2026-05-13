@@ -36,7 +36,8 @@ export async function addHelpEmbed(embed: EmbedBuilder) {
             \n- IQ: 총합 스탯의 합산치를 나타냅니다.
             \n- 뉴런: ⭐0성부터 ⭐30성까지 강화할 수 있습니다.
             \n- 잠재능력: 레어/에픽/유니크/레전드리 4개의 등급이 있으며 3개의 잠재능력을 재설정할 수 있습니다. 
-            - ⚠️ 현재 INT 스탯만 유효한 옵션입니다.`,
+            - ⚠️ 현재 INT 스탯만 유효한 옵션입니다.
+            \n- 좌우뇌: 좌뇌와 우뇌를 활성화하여 일정 등급만큼 스탯이 상승합니다. 과부하 등급이 오르면 스탯 하락 패널티가 부여됩니다.`,
             inline: false },
         { name: '확률 공지 링크', value: 'https://www.notion.so/v0-1-359b765c49f980bd8fcfea1dbc286d7b?source=copy_link', inline: false },
         { name: '개발자', value: '<@' + version.developerUserId + '>', inline: false },
