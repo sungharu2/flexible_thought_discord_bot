@@ -1,7 +1,8 @@
+import { LeftRight, getLeftRightData } from '../../brain_upgrade/upgrade.leftright.js';
 import { getNeuronDataByLv } from '../../brain_upgrade/upgrade.neuron.js';
 import { getPotentialData, initBrainPotential } from '../../brain_upgrade/upgrade.potential.js';
 import { insertNewLog } from '../log/log.service.js';
-import { decreaseSynapse, findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLevel, updateNeuron, updatePotential } from './brain.repository.js';
+import { decreaseSynapse, findBrainById, findBrainIqTop10ByServer, findBrainLevelTop10ByServer, findBrainNeuronTop10ByServer, insertBrainIfNotExists, updateAllIsEvolvedFalse, updateEvolveBrain, updateIq, updateLeftRightEquip, updateLeftRightUpgrade, updateLevel, updateNeuron, updatePotential } from './brain.repository.js';
 import type { Brain, BrainRow } from './brain.types.js';
 import crypto from 'crypto';
 
@@ -16,6 +17,8 @@ function toBrain(row: BrainRow): Brain {
 		brIq: row.br_iq,
 		brSynapse: row.br_synapse,
 		brEvolved: row.br_evolved == 1 ? true : false,
+		brLeftRightEquip: new LeftRight(row.br_left_right_equip),
+		brLeftRightUpgrade: new LeftRight(row.br_left_right_upgrade),
 	};
 }
 
@@ -33,6 +36,8 @@ export async function getBrain(userId: string): Promise<Brain | null> {
 		brIq: row.br_iq,
 		brSynapse: row.br_synapse,
 		brEvolved: row.br_evolved == 1 ? true : false,
+		brLeftRightEquip: new LeftRight(row.br_left_right_equip),
+		brLeftRightUpgrade: new LeftRight(row.br_left_right_upgrade),
 	};
 };
 
@@ -67,6 +72,8 @@ export async function insertNewBrain(userId: string): Promise<boolean> {
 		brIq: '',
 		brSynapse: 1000,
 		brEvolved: false,
+		brLeftRightEquip: new LeftRight('00000000000000000000000000000075'),
+		brLeftRightUpgrade: new LeftRight('00000000000000000000000000000075'),
 	})
 
 	return await insertBrainIfNotExists(userId, potential, iq);
@@ -103,8 +110,45 @@ export async function changePotential(userId: string, oldPotential: string, newP
 	const result = await updatePotential(userId, newPotential);
 
 	// DB 로그 저장
-	// TODO: 잠재능력 메모리얼 기능 구현에 따른 로그 수정
 	insertNewLog(userId, '4', oldPotential, newPotential);
+
+	return result
+};
+
+export async function equipLeftRight(userId: string): Promise<boolean> {
+	const brain = await getBrain(userId);
+	const oldLeftRightEquip = brain?.brLeftRightEquip.leftRight || '';
+	const newLeftRightForEquip = brain?.brLeftRightUpgrade.leftRightForEquip || '';
+
+	const result = await updateLeftRightEquip(userId, newLeftRightForEquip);
+
+	// DB 로그 저장
+	insertNewLog(userId, '8', oldLeftRightEquip, newLeftRightForEquip);
+
+	return result
+};
+
+export async function changeLeftRightUpgrade(userId: string, oldLeftRight: LeftRight, newLeftRight: LeftRight, curSynapse: number): Promise<boolean> {
+	// 시냅스 사용
+	const resultSynapse = await useSynapse(userId, curSynapse);
+	if (!resultSynapse) return false;
+
+	const result = await updateLeftRightUpgrade(userId, newLeftRight.leftRight);
+
+	// DB 로그 저장
+	insertNewLog(userId, '7', oldLeftRight.leftRight, newLeftRight.leftRight);
+
+	return result
+};
+export async function resetLeftRightUpgrade(userId: string): Promise<boolean> {
+	const brain = await getBrain(userId);
+	const oldLeftRightUpgrade = brain?.brLeftRightUpgrade.leftRight || '000000000000000000000000000000';
+	// 초기화
+	const initLeftRight = '00000000000000000000000000000075';
+	const result = await updateLeftRightUpgrade(userId, initLeftRight);
+
+	// DB 로그 저장
+	insertNewLog(userId, '9', oldLeftRightUpgrade, initLeftRight);
 
 	return result
 };
@@ -155,19 +199,24 @@ export async function useSynapse(userId: string, curSynapse: number): Promise<bo
 export function getIq(brain: Brain): string {
 	const neuronLv = brain.brNeuronLv;
 	const potential = brain.brPotential;
+	const leftRightEquip = brain.brLeftRightEquip;
 
 	const neuronData = getNeuronDataByLv(neuronLv);
 	const potentialData = getPotentialData(potential);
+	const leftRightData = getLeftRightData(leftRightEquip);
 
 	const baseInt = brain.brLv;
-	const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat;
-	const totalMultStat = neuronData.multStat + potentialData.multStat;
+	const totalAddedInt = baseInt + neuronData.addStat + potentialData.addStat + leftRightData.addStat;
+	const totalMultStat = (neuronData.multStat + potentialData.multStat + leftRightData.multStat) * (100 - leftRightData.minusMultStat) * 0.01;
 
 	//console.log('baseInt: ' + baseInt);
 	//console.log('neuronData.addStat: ' + neuronData.addStat);
 	//console.log('potentialData.addStat: ' + potentialData.addStat);
-	//console.log('totalAddedInt: ' + totalAddedInt);
-	//console.log('totalMultStat: ' + totalMultStat + '%');
+	// console.log('leftRightData.addStat: ' + leftRightData.addStat);
+	// console.log('leftRightData.multStat: ' + leftRightData.multStat);
+	// console.log('leftRightData.minusMultStat: ' + leftRightData.minusMultStat);
+	// console.log('totalAddedInt: ' + totalAddedInt);
+	// console.log('totalMultStat: ' + totalMultStat + '%');
 
 	return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
 }

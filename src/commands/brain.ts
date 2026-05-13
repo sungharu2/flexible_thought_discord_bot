@@ -2,6 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, roleMen
 import { changeIq, getBrain, getIq } from '../modules/brain/brain.service.js';
 import { printPotential } from '../brain_upgrade/upgrade.potential.js';
 import { printNeuronUI } from '../brain_upgrade/upgrade.neuron.js';
+import { LeftRight } from '../brain_upgrade/upgrade.leftright.js';
 
 export const data = new SlashCommandBuilder()
     .setName('두뇌')
@@ -25,6 +26,11 @@ export const data = new SlashCommandBuilder()
         subcommand
             .setName('잠재능력')
             .setDescription('두뇌의 잠재능력을 재설정합니다.')
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName('좌우뇌')
+            .setDescription('좌뇌와 우뇌를 활성화합니다.')
     )
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -51,6 +57,8 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
     const synapse = brain.brSynapse;
     const neuronLv = brain.brNeuronLv;
     const potential = brain.brPotential;
+    const leftRightEquip = brain.brLeftRightEquip;
+    const leftRightUpgrade = brain.brLeftRightUpgrade;
 
     // IQ 계산 DB 저장
     await changeIq(brain);
@@ -69,6 +77,11 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             { name: '뉴런', value: '**★ ' + neuronLv + '성**', inline: false },
             { name: '잠재능력', 
                 value: printPotential(potential),
+                inline: false 
+            },
+            { name: '좌우뇌', 
+                value: '좌뇌' + leftRightEquip.printLeftRightInfo(0) + '\n우뇌' + leftRightEquip.printLeftRightInfo(1) + '\n과부하' + leftRightEquip.printLeftRightInfo(2) 
+                    + '\n' + leftRightEquip.getLeftRightStat(0) + ' / ' + leftRightEquip.getLeftRightStat(1) + ' / ' + leftRightEquip.getLeftRightStat(2) ,
                 inline: false 
             }
         );
@@ -153,6 +166,45 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         await interaction.reply({ 
             embeds: [embed], 
             components: [rowButton],
+            withResponse: true,
+        });
+    }
+    if (subcommand == '좌우뇌') {
+        const embed = new EmbedBuilder()
+        .setColor(getColorByPotential(potential))
+        .setTitle('🧠 좌우뇌 정보')
+        .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + '활성화 확률: ' + leftRightUpgrade.successRate + '%\n')
+        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+
+        embed.addFields(
+            { name: '좌뇌' + leftRightUpgrade.printLeftRightInfo(0), 
+                value: leftRightUpgrade.printLeftRightUI(0),
+                inline: false 
+            },
+            { name: '우뇌' + leftRightUpgrade.printLeftRightInfo(1), 
+                value: leftRightUpgrade.printLeftRightUI(1),
+                inline: false 
+            },
+            { name: '과부하' + leftRightUpgrade.printLeftRightInfo(2), 
+                value: leftRightUpgrade.printLeftRightUI(2),
+                inline: false 
+            }
+        );
+
+        // 강화 버튼
+        const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isLeftUpgradeFinished);
+        const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isRightUpgradeFinished);
+        const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isOverloadUpgradeFinished);
+        // 교체 버튼
+        const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(!leftRightUpgrade.isEquipable);
+        // 초기화 버튼
+        const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(!leftRightUpgrade.isResetable);
+        const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+        const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+
+        await interaction.reply({ 
+            embeds: [embed], 
+            components: [rowButtonUpgrade, rowButtonEquipReset],
             withResponse: true,
         });
     }

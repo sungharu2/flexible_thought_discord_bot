@@ -6,7 +6,7 @@ import path from 'path';
 import { deployCommands } from "./deploy-commands.js";
 import { initChannels } from './init-channels.js';
 import { insertNewUser } from './modules/user/user.service.js';
-import { changeIq, changeNeuron, changePotential, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse } from './modules/brain/brain.service.js';
+import { changeIq, changeLeftRightUpgrade, changeNeuron, changePotential, equipLeftRight, evolveBrain, getBrain, insertNewBrain, resetIsEvolvedFalse, resetLeftRightUpgrade } from './modules/brain/brain.service.js';
 import { printPotential, rerollPotential } from './brain_upgrade/upgrade.potential.js';
 import { getColorByPotential } from './commands/brain.js';
 import { printNeuronUI, upgradeNeuron } from './brain_upgrade/upgrade.neuron.js';
@@ -14,6 +14,7 @@ import { insertNewUserMap } from './modules/user_server_map/usermap.service.js';
 import nodeCron from 'node-cron';
 
 import { fileURLToPath, pathToFileURL } from 'url';
+import { LeftRight, upgradeLeftRight } from './brain_upgrade/upgrade.leftright.js';
 
 // .env 파일 로드
 config();
@@ -153,6 +154,7 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
         // 버튼 상호작용 예외처리
         try {
+            const userId = interaction.user.id;
             // 타인의 메시지 상호작용 시
             //console.log('interaction.customId: ' + interaction.customId);
             if (!interaction.customId.includes(interaction.user.id)) {
@@ -161,16 +163,14 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // 진화
             if (interaction.customId.includes('brain_evolve')) {
-                const userId = interaction.user.id;
                 let brain = await getBrain(userId);
                 if (!brain)  {
                     console.warn("진화 처리 중 오류 발생");
                     return;
                 }
-
-                const potential = brain.brPotential;
-                const level = brain.brLv;
                 
+                const level = brain.brLv;
+                const potential = brain.brPotential;
                 // 진화
                 if (!brain.brEvolved) {
                     await evolveBrain(userId, level);
@@ -216,7 +216,6 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             // 뉴런 강화
             if (interaction.customId.includes('upgrade_neuron')) {
-                const userId = interaction.user.id;
                 let brain = await getBrain(userId);
                 if (!brain)  {
                     console.warn("뉴런 강화 오류 발생");
@@ -319,7 +318,6 @@ client.on(Events.InteractionCreate, async interaction => {
             }
             // 잠재능력 재설정
             if (interaction.customId.includes('upgrade_potential')) {
-                const userId = interaction.user.id;
                 let brain = await getBrain(userId);
                 if (!brain)  {
                     console.warn("잠재능력 재설정 오류 발생");
@@ -412,6 +410,422 @@ client.on(Events.InteractionCreate, async interaction => {
                 await interaction.update({ 
                     embeds: [embed], 
                     components: [rowButton],
+                });
+            }
+            // 좌뇌 or 우뇌 활성화
+            if (interaction.customId.includes('upgrade_left') || interaction.customId.includes('upgrade_right') || interaction.customId.includes('upgrade_overload')) {
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("좌우뇌 정보 오류 발생");
+                    return;
+                }
+
+                const synapse = brain.brSynapse;
+                const potential = brain.brPotential;
+                const leftRightUpgrade = brain.brLeftRightUpgrade;
+                let upgradeType = -1;
+                if (interaction.customId.includes('upgrade_left')) {
+                    upgradeType = 0;
+                }
+                if (interaction.customId.includes('upgrade_right')) {
+                    upgradeType = 1;
+                }
+                if (interaction.customId.includes('upgrade_overload')) {
+                    upgradeType = 2;
+                }
+
+                // 시냅스 모두 사용
+                if (synapse <= 0) {
+                    const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
+                    .setTitle('🧠 좌우뇌 정보')
+                    .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
+                    .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                    .setFooter({
+                        text: `요청자: ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    });
+
+                    embed.addFields(
+                        { name: '좌뇌' + leftRightUpgrade.printLeftRightInfo(0), 
+                            value: leftRightUpgrade.printLeftRightUI(0),
+                            inline: false 
+                        },
+                        { name: '우뇌' + leftRightUpgrade.printLeftRightInfo(1), 
+                            value: leftRightUpgrade.printLeftRightUI(1),
+                            inline: false 
+                        },
+                        { name: '과부하' + leftRightUpgrade.printLeftRightInfo(2), 
+                            value: leftRightUpgrade.printLeftRightUI(2),
+                            inline: false 
+                        }
+                    );
+                    // 강화 버튼
+                    const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    // 초기화 버튼
+                    const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(true);
+                    const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                    const rowButtonReset = new ActionRowBuilder<ButtonBuilder>().addComponents(resetLeftRight);
+            
+                    await interaction.update({ 
+                        embeds: [embed], 
+                        components: [rowButtonUpgrade, rowButtonReset],
+                    });
+                    return;
+                }
+
+                let result = false;
+                // 좌우뇌 강화 DB 결과 저장
+                const upgradedLeftRight = upgradeLeftRight(leftRightUpgrade, upgradeType);
+                const newLeftRight = upgradedLeftRight[0];
+                const upgradeResult = upgradedLeftRight[1];
+                //console.log(upgradedLeftRight);
+                
+                // 잘못된 강화
+                if (upgradeResult == null) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🧠 좌우뇌 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 400\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
+                result = await changeLeftRightUpgrade(userId, leftRightUpgrade, newLeftRight, synapse);
+                // IQ 계산 DB 저장
+                const newBrain = await getBrain(userId);
+                if (newBrain) {
+                    brain = newBrain;
+                }
+                await changeIq(brain);
+                // DB 작업 실패 시
+                if (!result) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🧠 좌우뇌 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
+
+                const isSuccess = upgradeResult;
+                
+                let description = '';
+                if (upgradeType == 0){
+                    description = (isSuccess ? '좌뇌 활성화 성공!\n' : '좌뇌 활성화 실패..\n');
+                }
+                if (upgradeType == 1){
+                    description = (isSuccess ? '우뇌 활성화 성공!\n' : '우뇌 활성화 실패..\n');
+                }
+                if (upgradeType == 2){
+                    description = (isSuccess ? '과부하 활성화 성공!\n' : '과부하 활성화 실패..\n');
+                }
+
+                const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
+                    .setTitle('🧠 좌우뇌 정보')
+                    .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + '활성화 확률: ' + newLeftRight.successRate + '%\n' + description)
+                    .setThumbnail(isSuccess ? interaction.client.user?.displayAvatarURL() || '' : interaction.user?.displayAvatarURL() || '')
+                    .setFooter({
+                        text: `요청자: ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                });
+        
+                embed.addFields(
+                    { name: '좌뇌' + newLeftRight.printLeftRightInfo(0), 
+                        value: newLeftRight.printLeftRightUI(0),
+                        inline: false 
+                    },
+                    { name: '우뇌' + newLeftRight.printLeftRightInfo(1), 
+                        value: newLeftRight.printLeftRightUI(1),
+                        inline: false 
+                    },
+                    { name: '과부하' + newLeftRight.printLeftRightInfo(2), 
+                        value: newLeftRight.printLeftRightUI(2),
+                        inline: false 
+                    }
+                );
+
+                // 강화 버튼
+                const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(newLeftRight.isLeftUpgradeFinished);
+                const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(newLeftRight.isRightUpgradeFinished);
+                const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(newLeftRight.isOverloadUpgradeFinished);
+                // 교체 버튼
+                const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(!newLeftRight.isEquipable);
+                // 초기화 버튼
+                const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(!newLeftRight.isResetable);
+                const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+        
+                await interaction.update({ 
+                    embeds: [embed], 
+                    components: [rowButtonUpgrade, rowButtonEquipReset],
+                });
+            }
+            // 좌우뇌 교체
+            if (interaction.customId.includes('equip_left_right')) {
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("좌우뇌 정보 오류 발생");
+                    return;
+                }
+
+                const synapse = brain.brSynapse;
+                const potential = brain.brPotential;
+                const leftRightUpgrade = brain.brLeftRightUpgrade;
+
+                // 시냅스 모두 사용
+                if (synapse <= 0) {
+                    const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
+                    .setTitle('🧠 좌우뇌 정보')
+                    .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
+                    .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                    .setFooter({
+                        text: `요청자: ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    });
+
+                    embed.addFields(
+                        { name: '좌뇌' + leftRightUpgrade.printLeftRightInfo(0), 
+                            value: leftRightUpgrade.printLeftRightUI(0),
+                            inline: false 
+                        },
+                        { name: '우뇌' + leftRightUpgrade.printLeftRightInfo(1), 
+                            value: leftRightUpgrade.printLeftRightUI(1),
+                            inline: false 
+                        },
+                        { name: '과부하' + leftRightUpgrade.printLeftRightInfo(2), 
+                            value: leftRightUpgrade.printLeftRightUI(2),
+                            inline: false 
+                        }
+                    );
+
+                    // 강화 버튼
+                    const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    // 교체 버튼
+                    const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(!leftRightUpgrade.isEquipable);
+                    // 초기화 버튼
+                    const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(true);
+                    const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                    const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+            
+                    await interaction.update({ 
+                        embeds: [embed], 
+                        components: [rowButtonUpgrade, rowButtonEquipReset],
+                    });
+                    return;
+                }
+
+                let result = false;
+                result = await equipLeftRight(userId);
+                // IQ 계산 DB 저장
+                const newBrain = await getBrain(userId);
+                if (newBrain) {
+                    brain = newBrain;
+                }
+                await changeIq(brain);
+                // DB 작업 실패 시
+                if (!result) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🧠 좌우뇌 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
+
+                const embed = new EmbedBuilder()
+                .setColor(getColorByPotential(potential))
+                .setTitle('🧠 좌우뇌 정보')
+                .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' 
+                    + '활성화 확률: 75%\n교체 완료! 적용 스탯: ' + leftRightUpgrade.getLeftRightStat(0) + ' / '+ leftRightUpgrade.getLeftRightStat(1))
+                .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                .setFooter({
+                    text: `요청자: ${interaction.user.tag}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                });
+        
+                embed.addFields(
+                    { name: '좌뇌' + leftRightUpgrade.printLeftRightInfo(0), 
+                        value: leftRightUpgrade.printLeftRightUI(0),
+                        inline: false 
+                    },
+                    { name: '우뇌' + leftRightUpgrade.printLeftRightInfo(1), 
+                        value: leftRightUpgrade.printLeftRightUI(1),
+                        inline: false 
+                    },
+                    { name: '과부하' + leftRightUpgrade.printLeftRightInfo(2), 
+                        value: leftRightUpgrade.printLeftRightUI(2),
+                        inline: false 
+                    }
+                );
+
+                // 강화 버튼
+                const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isLeftUpgradeFinished);
+                const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isRightUpgradeFinished);
+                const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(leftRightUpgrade.isOverloadUpgradeFinished);
+                // 교체 버튼
+                const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(!leftRightUpgrade.isEquipable);
+                // 초기화 버튼
+                const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(!leftRightUpgrade.isResetable);
+                const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+        
+                await interaction.update({ 
+                    embeds: [embed], 
+                    components: [rowButtonUpgrade, rowButtonEquipReset],
+                });
+            }
+            // 좌우뇌 초기화
+            if (interaction.customId.includes('reset_left_right')) {
+                let brain = await getBrain(userId);
+                if (!brain)  {
+                    console.warn("좌우뇌 정보 오류 발생");
+                    return;
+                }
+
+                const synapse = brain.brSynapse;
+                const potential = brain.brPotential;
+                const leftRightUpgrade = brain.brLeftRightUpgrade;
+
+                // 시냅스 모두 사용
+                if (synapse <= 0) {
+                    const embed = new EmbedBuilder()
+                    .setColor(getColorByPotential(potential))
+                    .setTitle('🧠 좌우뇌 정보')
+                    .setDescription('오늘 모든 시냅스를 사용했습니다.\n내일 다시 두뇌-레벨 메뉴의 [진화]를 통해 시냅스를 충전하세요!\n')
+                    .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                    .setFooter({
+                        text: `요청자: ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    });
+
+                    embed.addFields(
+                        { name: '좌뇌' + leftRightUpgrade.printLeftRightInfo(0), 
+                            value: leftRightUpgrade.printLeftRightUI(0),
+                            inline: false 
+                        },
+                        { name: '우뇌' + leftRightUpgrade.printLeftRightInfo(1), 
+                            value: leftRightUpgrade.printLeftRightUI(1),
+                            inline: false 
+                        },
+                        { name: '과부하' + leftRightUpgrade.printLeftRightInfo(2), 
+                            value: leftRightUpgrade.printLeftRightUI(2),
+                            inline: false 
+                        }
+                    );
+                    // 강화 버튼
+                    const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success).setDisabled(true);
+                    // 교체 버튼
+                    const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(!leftRightUpgrade.isEquipable);
+                    // 초기화 버튼
+                    const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(true);
+                    const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                    const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+            
+                    await interaction.update({ 
+                        embeds: [embed], 
+                        components: [rowButtonUpgrade, rowButtonEquipReset],
+                    });
+                    return;
+                }
+
+                let result = false;
+                result = await resetLeftRightUpgrade(userId);
+                const leftRightAfterReset = new LeftRight('00000000000000000000000000000075');
+                // IQ 계산 DB 저장
+                const newBrain = await getBrain(userId);
+                if (newBrain) {
+                    brain = newBrain;
+                }
+                await changeIq(brain);
+                // DB 작업 실패 시
+                if (!result) {
+                    const embed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle('🧠 좌우뇌 정보')
+                        .setDescription('내부 처리 중 오류가 발생했습니다. 같은 현상이 계속 발생한다면 관리자에게 문의하세요. 오류 코드: 203\n')
+                        .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                        .setFooter({
+                            text: `요청자: ${interaction.user.tag}`,
+                            iconURL: interaction.user.displayAvatarURL()
+                        });
+                
+                        interaction.update({ 
+                            embeds: [embed],
+                    });
+                    return;
+                }
+
+                const embed = new EmbedBuilder()
+                .setColor(getColorByPotential(potential))
+                .setTitle('🧠 좌우뇌 정보')
+                .setDescription('잔여 시냅스: ' + brain.brSynapse + ' / 1000\n' + '활성화 확률: 75%\n초기화 완료\n')
+                .setThumbnail(interaction.user?.displayAvatarURL() || '')
+                .setFooter({
+                    text: `요청자: ${interaction.user.tag}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                });
+        
+                embed.addFields(
+                    { name: '좌뇌 (+0)[0등급]', 
+                        value: leftRightAfterReset.printLeftRightUI(0),
+                        inline: false 
+                    },
+                    { name: '우뇌 (+0)[0등급]', 
+                        value: leftRightAfterReset.printLeftRightUI(1),
+                        inline: false 
+                    },
+                    { name: '과부하 (+0)[0등급]', 
+                        value: leftRightAfterReset.printLeftRightUI(2),
+                        inline: false 
+                    }
+                );
+
+                // 강화 버튼
+                const upgradeLeft = new ButtonBuilder().setCustomId('upgrade_left_' + userId).setLabel('좌뇌 활성화').setStyle(ButtonStyle.Success);
+                const upgradeRight = new ButtonBuilder().setCustomId('upgrade_right_' + userId).setLabel('우뇌 활성화').setStyle(ButtonStyle.Success);
+                const upgradeOverload = new ButtonBuilder().setCustomId('upgrade_overload_' + userId).setLabel('과부하 활성화').setStyle(ButtonStyle.Success);
+                // 교체 버튼
+                const btnEquipLeftRight = new ButtonBuilder().setCustomId('equip_left_right_' + userId).setLabel('교체').setStyle(ButtonStyle.Primary).setDisabled(true);;
+                // 초기화 버튼
+                const resetLeftRight = new ButtonBuilder().setCustomId('reset_left_right_' + userId).setLabel('초기화').setStyle(ButtonStyle.Danger).setDisabled(true);
+                const rowButtonUpgrade = new ActionRowBuilder<ButtonBuilder>().addComponents([upgradeLeft, upgradeRight, upgradeOverload]);
+                const rowButtonEquipReset = new ActionRowBuilder<ButtonBuilder>().addComponents([btnEquipLeftRight, resetLeftRight]);
+        
+                await interaction.update({ 
+                    embeds: [embed], 
+                    components: [rowButtonUpgrade, rowButtonEquipReset],
                 });
             }
         } catch (error) {

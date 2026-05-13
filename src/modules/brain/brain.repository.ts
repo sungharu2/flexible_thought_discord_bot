@@ -135,6 +135,38 @@ export async function updatePotential(userId: string, newPotential: string): Pro
     return result.affectedRows > 0;
 }
 
+export async function updateLeftRightEquip(userId: string, newLeftRight: string): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_left_right_equip = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), newLeftRight, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
+export async function updateLeftRightUpgrade(userId: string, newLeftRight: string): Promise<boolean> {
+    const result = await query(
+        `
+        UPDATE tb_brain
+        SET 
+            dt_modified = ?,
+            br_left_right_upgrade = ?
+        WHERE discord_user_id = ?
+        `,
+        [new Date(), newLeftRight, userId]
+    ) as unknown as ResultSetHeader;
+    
+    //console.log(result);
+    return result.affectedRows > 0;
+}
+
 export async function updateIq(userId: string, iq: string): Promise<boolean> {
     const result = await query(
         `
