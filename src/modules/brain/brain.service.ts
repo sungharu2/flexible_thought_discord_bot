@@ -218,7 +218,7 @@ export function getIq(brain: Brain): string {
 	// console.log('totalAddedInt: ' + totalAddedInt);
 	// console.log('totalMultStat: ' + totalMultStat + '%');
 
-	return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)) + '';
+	return (totalAddedInt + totalAddedInt * (totalMultStat * 0.01)).toFixed(2) + '';
 }
 
 // 진화 시 레벨 상승
