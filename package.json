@@ -1,6 +1,6 @@
 {
   "name": "flexible_thought_discord_bot",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "유연한 사고 디스코드 봇 개인 프로젝트",
   "main": "index.js",
   "scripts": {
