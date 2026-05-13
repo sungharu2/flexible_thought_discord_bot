@@ -170,11 +170,13 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
                 
                 const level = brain.brLv;
+                let levelIncreased = 0;
                 const potential = brain.brPotential;
                 // 진화
                 if (!brain.brEvolved) {
                     await evolveBrain(userId, level);
                     const newBrain = await getBrain(userId);
+                    levelIncreased = (newBrain?.brLv || level) - level;
                     if (newBrain) {
                         brain = newBrain;
                     }
@@ -186,7 +188,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 const embed = new EmbedBuilder()
                 .setColor(getColorByPotential(potential))
                 .setTitle('🧠 레벨 정보')
-                .setDescription('오늘 진화를 완료했습니다!\n')
+                .setDescription('오늘 진화를 완료했습니다!\n+' + levelIncreased + '레벨 상승!')
                 .setThumbnail(interaction.user?.displayAvatarURL() || '')
         
                 embed.addFields(
