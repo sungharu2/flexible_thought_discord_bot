@@ -257,6 +257,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     return;
                 }
 
+                const oldNeuronLv = neuronLv;
                 const newNeuronLv = upgradeNeuron(neuronLv);
                 const isSuccess = neuronLv + 1 == newNeuronLv;
                 const isDestroyed = neuronLv > 20 && newNeuronLv == 12;
@@ -270,7 +271,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 }
                 await changeIq(brain);
                 // 25성 이상 강화 성공 시 채널 메시지 전송
-                if (newNeuronLv >= 25) {
+                if (newNeuronLv >= 25 && newNeuronLv != oldNeuronLv) {
                     sendMessageOnChannel(interaction.channelId, '<@' + userId + '> 님이 뉴런 ⭐ ' + newNeuronLv + '성 강화에 성공하였습니다! 모두 축하해주세요!');
                 }
                 // DB 작업 실패 시
